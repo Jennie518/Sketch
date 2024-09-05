@@ -1,35 +1,43 @@
 package com.example.lab2
-import com.example.lab2.CustomView
 
-import android.content.Context
 import android.os.Bundle
-import android.util.AttributeSet
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.databinding.DataBindingUtil
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import com.example.lab2.databinding.FragmentSecondBinding
 
 class SecondFragment : Fragment() {
 
-    private var customView: CustomView? = null
+    private val viewModel: CustomViewModel by viewModels()
+    private lateinit var binding: FragmentSecondBinding
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        val view = inflater.inflate(R.layout.fragment_second, container, false)
+        // 使用泛型形式初始化 DataBinding
+        binding = DataBindingUtil.inflate<FragmentSecondBinding>(
+            inflater, R.layout.fragment_second, container, false
+        )
 
-        customView = view.findViewById(R.id.custom_view)
+        binding.lifecycleOwner = viewLifecycleOwner
 
-        // Restore the previous drawing (if any) when navigating back to the second fragment
-        customView?.restoreSavedDrawing()
+        // 观察 ViewModel 中的 LiveData
+        viewModel.drawingPath.observe(viewLifecycleOwner) { savedPath ->
+            // 更新 CustomView，当绘制路径发生变化时
+            savedPath?.let { binding.customView.setPath(it) }
+        }
 
-        return view
+        return binding.root
     }
 
     override fun onPause() {
         super.onPause()
-        // Save the current drawing before navigating away
-        customView?.saveCurrentDrawing()
+        // 保存当前 CustomView 的绘制内容到 ViewModel
+        val currentPath = binding.customView.getCurrentPath()
+        viewModel.saveDrawing(currentPath)
     }
 }
