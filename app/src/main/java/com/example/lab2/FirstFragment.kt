@@ -6,8 +6,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import com.example.lab2.databinding.ActivityMainBinding
-import com.example.lab2.databinding.FragmentFirstBinding
 
 // TODO: Rename parameter arguments, choose names that match
 // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
@@ -25,9 +23,8 @@ class FirstFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-//        val view = inflater.inflate(R.layout.fragment_first, container, false)
-        val binding = FragmentFirstBinding.inflate(layoutInflater)
-        val navigateButton = binding.navigateButton
+        val view = inflater.inflate(R.layout.fragment_first, container, false)
+        val navigateButton = view.findViewById<Button>(R.id.navigate_button)
 
         // Navigate to SecondFragment when the button is clicked
         navigateButton.setOnClickListener {

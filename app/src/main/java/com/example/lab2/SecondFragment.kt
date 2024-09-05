@@ -8,7 +8,6 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import com.example.lab2.databinding.FragmentSecondBinding
 
 class SecondFragment : Fragment() {
 
@@ -18,9 +17,9 @@ class SecondFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-//        val view = inflater.inflate(R.layout.fragment_second, container, false)
-        val binding = FragmentSecondBinding.inflate(layoutInflater);
-        customView = binding.customView
+        val view = inflater.inflate(R.layout.fragment_second, container, false)
+
+        customView = view.findViewById(R.id.custom_view)
 
         // Restore the previous drawing (if any) when navigating back to the second fragment
         customView?.restoreSavedDrawing()
