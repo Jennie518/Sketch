@@ -35,7 +35,7 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
 
     // Save the current drawing
     fun saveCurrentDrawing() {
-        savedPath = Path(path) // Save the current path
+        savedPath = Path(path) //Save the current path
     }
 
     // Restore the previous drawing
