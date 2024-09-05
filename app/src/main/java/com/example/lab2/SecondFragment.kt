@@ -7,6 +7,7 @@ import androidx.databinding.DataBindingUtil
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import com.example.lab2.databinding.FragmentFirstBinding
 import com.example.lab2.databinding.FragmentSecondBinding
 
 class SecondFragment : Fragment() {
@@ -18,10 +19,8 @@ class SecondFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // 使用泛型形式初始化 DataBinding
-        binding = DataBindingUtil.inflate<FragmentSecondBinding>(
-            inflater, R.layout.fragment_second, container, false
-        )
+
+        val binding = FragmentSecondBinding.inflate(layoutInflater, container, false)
 
         binding.lifecycleOwner = viewLifecycleOwner
 
