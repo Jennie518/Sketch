@@ -11,11 +11,13 @@ import android.view.View
 class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) {
     private val path = Path()
     private val paint = Paint()
+    private var brushShape = Paint.Cap.ROUND
 
     init {
         paint.color = android.graphics.Color.BLACK
         paint.strokeWidth = 10f
         paint.style = Paint.Style.STROKE
+        paint.strokeCap = brushShape
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -25,6 +27,15 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
         }
         invalidate() // Redraw the view
         return true
+    }
+
+    // Set the brush shape (cap style)
+    fun setBrushShape(brushShape: BrushShape) {
+        paint.strokeCap = when (brushShape) {
+            BrushShape.ROUND -> Paint.Cap.ROUND
+            BrushShape.SQUARE -> Paint.Cap.SQUARE
+        }
+//        invalidate() // Redraw with the updated brush shape
     }
 
     override fun onDraw(canvas: Canvas) {

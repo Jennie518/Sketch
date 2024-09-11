@@ -13,5 +13,30 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
+        <!-- Controls for selecting brush shape -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center"
+            android:layout_gravity="bottom">
+
+            <!-- Button to select round brush -->
+            <Button
+                android:id="@+id/roundBrushButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Round Brush" />
+
+            <!-- Button to select square brush -->
+            <Button
+                android:id="@+id/squareBrushButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Square Brush"
+                android:layout_marginStart="16dp"/>
+
+        </LinearLayout>
+
     </FrameLayout>
 </layout>
