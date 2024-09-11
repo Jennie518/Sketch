@@ -8,7 +8,7 @@ import android.graphics.Path
 class CustomViewModel : ViewModel() {
     // LiveData to hold the drawing path
     private val _drawingPath = MutableLiveData<Path>()
-    val drawingPath: LiveData<Path> get() = _drawingPath
+    val drawingPath = _drawingPath as LiveData<Path>
 
     // Save the drawing to LiveData
     fun saveDrawing(path: Path) {

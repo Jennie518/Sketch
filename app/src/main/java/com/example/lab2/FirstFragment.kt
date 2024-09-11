@@ -31,6 +31,8 @@ class FirstFragment : Fragment() {
 
         // Navigate to SecondFragment when the button is clicked
         binding.navigateButton.setOnClickListener {
+
+
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, SecondFragment())
                 .addToBackStack(null)
