@@ -51,17 +51,17 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-                // 开始一个新的路径，存储当前的路径和画笔
+                // Create new Path and Paint when fingers touches the canvas
                 currentPath = Path()
                 currentPath.moveTo(event.x, event.y)
             }
             MotionEvent.ACTION_MOVE -> {
-                // 随手指移动延伸路径
+                // connect the path to the end of the path
                 currentPath.lineTo(event.x, event.y)
                 invalidate()
             }
             MotionEvent.ACTION_UP -> {
-                // 当手指抬起时，将路径和画笔加入列表
+                // add path and paint into the list when fingers leave the canvas
                 paths.add(Pair(currentPath, currentPaint))
                 invalidate()
             }

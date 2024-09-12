@@ -25,11 +25,11 @@ class SecondFragment : Fragment() {
         inflater: LayoutInflater, container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        // 使用泛型形式初始化 DataBinding
-        binding = DataBindingUtil.inflate<FragmentSecondBinding>(
+        binding = DataBindingUtil.inflate(
             inflater, R.layout.fragment_second, container, false
         )
 
+        // handle the call back
         val callback = requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
 
             val currentPath = binding.customView.getCurrentPath()
@@ -95,23 +95,23 @@ class SecondFragment : Fragment() {
         // below are the logics for path's colors
         binding.blueColor.setOnClickListener(){
 
-            Toast.makeText(requireActivity(),"Clicked blueColor",Toast.LENGTH_SHORT).show()
+//            Toast.makeText(requireActivity(),"Clicked blueColor",Toast.LENGTH_SHORT).show()
             binding.customView.setColor(Color.BLUE)
 
         }
 
         binding.redColor.setOnClickListener(){
-            Toast.makeText(requireActivity(),"Clicked redColor",Toast.LENGTH_SHORT).show()
+//            Toast.makeText(requireActivity(),"Clicked redColor",Toast.LENGTH_SHORT).show()
             binding.customView.setColor(Color.RED)
         }
 
         binding.whiteColor.setOnClickListener(){
-            Toast.makeText(requireActivity(),"Clicked whiteColor",Toast.LENGTH_SHORT).show()
+//            Toast.makeText(requireActivity(),"Clicked whiteColor",Toast.LENGTH_SHORT).show()
             binding.customView.setColor(Color.WHITE)
         }
 
         binding.blackColor.setOnClickListener(){
-            Toast.makeText(requireActivity(),"Clicked blackColor",Toast.LENGTH_SHORT).show()
+//            Toast.makeText(requireActivity(),"Clicked blackColor",Toast.LENGTH_SHORT).show()
             binding.customView.setColor(Color.BLACK)
         }
 
@@ -130,7 +130,6 @@ class SecondFragment : Fragment() {
 
 //    override fun onPause() {
 //        super.onPause()
-//        // 保存当前 CustomView 的绘制内容到 ViewModel
 //        val currentPath = binding.customView.getCurrentPath()
 //        viewModel.saveDrawing(currentPath)
 //    }
