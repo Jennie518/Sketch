@@ -2,6 +2,7 @@ package com.example.lab2
 
 import android.content.Context
 import android.graphics.Canvas
+import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.util.AttributeSet
@@ -12,9 +13,11 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
     private val path = Path()
     private val paint = Paint()
     private var brushShape = Paint.Cap.ROUND
+    private var currColor =  Color.BLACK
 
     init {
-        paint.color = android.graphics.Color.BLACK
+        paint.isAntiAlias = true
+        paint.color = currColor
         paint.strokeWidth = 10f
         paint.style = Paint.Style.STROKE
         paint.strokeCap = brushShape
@@ -41,6 +44,7 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         canvas.drawPath(path, paint)
+        paint.color = currColor
     }
 
     // Expose methods to interact with the path from the ViewModel
@@ -52,4 +56,14 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
         path.set(newPath)
         invalidate() // Redraw the view with the new path
     }
+
+    fun setColor(color: Int){
+        currColor = color
+    }
+
+    fun getCurrentColor(): Int {
+        return currColor
+    }
+
+
 }

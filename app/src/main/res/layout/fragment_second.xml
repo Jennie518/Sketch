@@ -37,6 +37,43 @@
                 android:layout_marginStart="16dp"/>
 
         </LinearLayout>
+        
+        <LinearLayout
+            android:id="@+id/color_bar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/purple"
+            android:gravity="center"
+            android:orientation="horizontal">
+            <ImageButton
+                android:id="@+id/blue_color"
+                android:layout_height="50dp"
+                android:layout_width="50dp"
+                android:layout_margin="10dp"
+                android:background="@drawable/blue_background"/>
+            <ImageButton
+                android:id="@+id/red_color"
+                android:layout_height="50dp"
+                android:layout_width="50dp"
+                android:layout_margin="10dp"
+                android:background="@drawable/red_background"/>
+            <ImageButton
+                android:id="@+id/black_color"
+                android:layout_height="50dp"
+                android:layout_width="50dp"
+                android:layout_margin="10dp"
+                android:background="@drawable/black_background"/>
+            <ImageButton
+                android:id="@+id/white_color"
+                android:layout_height="50dp"
+                android:layout_width="50dp"
+                android:layout_margin="10dp"
+                android:background="@drawable/white_background"/>
+
+
+        </LinearLayout>
+
+        
 
     </FrameLayout>
 </layout>

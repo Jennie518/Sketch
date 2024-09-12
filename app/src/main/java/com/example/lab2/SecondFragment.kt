@@ -1,5 +1,6 @@
 package com.example.lab2
 
+import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -8,6 +9,7 @@ import androidx.databinding.DataBindingUtil
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.fragment.app.activityViewModels
 import com.example.lab2.databinding.FragmentSecondBinding
@@ -30,7 +32,9 @@ class SecondFragment : Fragment() {
         val callback = requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
 
             val currentPath = binding.customView.getCurrentPath()
+            val currentColor = binding.customView.getCurrentColor()
             viewModel.saveDrawing(currentPath)
+            viewModel.saveColor(currentColor)
             Log.d("here1", viewModel.getSavedDrawing().toString())
             requireActivity().supportFragmentManager.popBackStack()
 
@@ -54,6 +58,35 @@ class SecondFragment : Fragment() {
             // 更新 CustomView，当绘制路径发生变化时
             savedPath?.let { binding.customView.setPath(it) }
         }
+
+        viewModel.colorP.observe(viewLifecycleOwner) { savedPath ->
+
+            savedPath?.let { binding.customView.setColor(it) }
+        }
+
+        // below are the logics for path's colors
+        binding.blueColor.setOnClickListener(){
+
+            Toast.makeText(requireActivity(),"Clicked blueColor",Toast.LENGTH_SHORT).show()
+            binding.customView.setColor(Color.BLUE)
+
+        }
+
+        binding.redColor.setOnClickListener(){
+            Toast.makeText(requireActivity(),"Clicked redColor",Toast.LENGTH_SHORT).show()
+            binding.customView.setColor(Color.RED)
+        }
+
+        binding.whiteColor.setOnClickListener(){
+            Toast.makeText(requireActivity(),"Clicked whiteColor",Toast.LENGTH_SHORT).show()
+            binding.customView.setColor(Color.WHITE)
+        }
+
+        binding.blackColor.setOnClickListener(){
+            Toast.makeText(requireActivity(),"Clicked blackColor",Toast.LENGTH_SHORT).show()
+            binding.customView.setColor(Color.BLACK)
+        }
+
 
         return binding.root
     }
