@@ -13,7 +13,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-        <!-- Controls for selecting brush shape -->
+        <!-- Controls for selecting brush shape and size -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -35,6 +35,12 @@
                 android:layout_height="wrap_content"
                 android:text="Square Brush"
                 android:layout_marginStart="16dp"/>
+
+            <SeekBar
+                android:id="@+id/brush_size_seekbar"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:max = "50"/>
 
         </LinearLayout>
         
@@ -73,7 +79,6 @@
 
         </LinearLayout>
 
-        
 
     </FrameLayout>
 </layout>

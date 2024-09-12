@@ -12,6 +12,7 @@ class CustomViewModel : ViewModel() {
     private val _colorPaint = MutableLiveData<Int>()
     val drawingPath = _drawingPath as LiveData<Path>
     val colorP = _colorPaint as LiveData<Int>
+    val brushSize = MutableLiveData<Float>()
 
     //LiveData to hold the paint brush data
     private val _brushShape = MutableLiveData<Paint.Cap>().apply { value = Paint.Cap.ROUND } // Default shape
@@ -25,12 +26,13 @@ class CustomViewModel : ViewModel() {
     fun saveColor(color: Int) {
         _colorPaint.value = color
     }
-
     // Restore the previous drawing (if any)
     fun getSavedDrawing(): LiveData<Path> {
         return drawingPath
     }
-
+    fun saveBrushSize(size: Float) {
+        brushSize.value = size
+    }
     fun getSavedColor(): LiveData<Int> {
         return colorP
     }

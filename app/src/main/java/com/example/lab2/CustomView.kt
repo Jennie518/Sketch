@@ -14,13 +14,14 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
     private val paint = Paint()
     private var brushShape = Paint.Cap.ROUND
     private var currColor =  Color.BLACK
+    private var brushSize = 10f
 
     init {
         paint.isAntiAlias = true
         paint.color = currColor
-        paint.strokeWidth = 10f
         paint.style = Paint.Style.STROKE
         paint.strokeCap = brushShape
+        paint.strokeWidth = brushSize
     }
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
@@ -39,6 +40,14 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
             BrushShape.SQUARE -> Paint.Cap.SQUARE
         }
 //        invalidate() // Redraw with the updated brush shape
+    }
+//    Set Brush size
+    fun setBrushSize(brushSize: Float) {
+        paint.strokeWidth = brushSize
+        invalidate() // redraw
+    }
+    fun getBrushSize(): Float {
+        return brushSize
     }
 
     override fun onDraw(canvas: Canvas) {

@@ -9,6 +9,7 @@ import androidx.databinding.DataBindingUtil
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.SeekBar
 import android.widget.Toast
 import androidx.activity.addCallback
 import androidx.fragment.app.activityViewModels
@@ -33,13 +34,21 @@ class SecondFragment : Fragment() {
 
             val currentPath = binding.customView.getCurrentPath()
             val currentColor = binding.customView.getCurrentColor()
+            val currentBrushSize = binding.customView.getBrushSize()
             viewModel.saveDrawing(currentPath)
             viewModel.saveColor(currentColor)
+            viewModel.saveBrushSize(currentBrushSize)
             Log.d("here1", viewModel.getSavedDrawing().toString())
             requireActivity().supportFragmentManager.popBackStack()
 
         }
 
+        viewModel.brushSize.observe(viewLifecycleOwner) { size ->
+            size?.let {
+                binding.customView.setBrushSize(it)
+                binding.brushSizeSeekbar.progress = it.toInt()
+            }
+        }
         val customView = binding.customView
 
         // Click listeners for brush shape selection
@@ -53,9 +62,23 @@ class SecondFragment : Fragment() {
 
         binding.lifecycleOwner = viewLifecycleOwner
 
-        // 观察 ViewModel 中的 LiveData
+        binding.brushSizeSeekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+
+                binding.customView.setBrushSize(progress.toFloat())
+            }
+
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {
+                // Do nothing
+            }
+
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                viewModel.saveBrushSize(binding.customView.getBrushSize())
+            }
+        })
+        // observe live data from view model
         viewModel.drawingPath.observe(viewLifecycleOwner) { savedPath ->
-            // 更新 CustomView，当绘制路径发生变化时
+            // update path if changes
             savedPath?.let { binding.customView.setPath(it) }
         }
 
@@ -63,6 +86,11 @@ class SecondFragment : Fragment() {
 
             savedPath?.let { binding.customView.setColor(it) }
         }
+
+        viewModel.brushSize.observe(viewLifecycleOwner) { size ->
+            size?.let { binding.customView.setBrushSize(it) }
+        }
+
 
         // below are the logics for path's colors
         binding.blueColor.setOnClickListener(){
