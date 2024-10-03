@@ -1,12 +1,19 @@
 package com.example.lab2
 
+import android.app.Application
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
 import android.graphics.Path
 import android.graphics.Paint
+import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
-class CustomViewModel : ViewModel() {
+class CustomViewModel(application: Application) : AndroidViewModel(application){
+
+    private val drawingDao: DrawingDao = DrawingDatabase.getDatabase(application).drawingDao()
+
     // LiveData to hold the drawing path
     private val _drawingPath = MutableLiveData<Path>()
     private val _colorPaint = MutableLiveData<Int>()
@@ -41,4 +48,16 @@ class CustomViewModel : ViewModel() {
     fun setBrushShape(shape: Paint.Cap) {
         _brushShape.value = shape
     }
+
+    fun saveDrawingToDatabase(path: String, color: Int, brushSize: Float) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val drawing = DrawingData(pathData = path, color = color, brushSize = brushSize)
+            val id = drawingDao.insertDrawing(drawing)
+        }
+    }
+
+    fun loadDrawingFromDatabase(id: Int): LiveData<DrawingData> {
+        return drawingDao.getDrawing(id)
+    }
+
 }

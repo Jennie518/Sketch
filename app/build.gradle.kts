@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
+    id("com.google.devtools.ksp")
 }
 
 android {
@@ -40,11 +41,17 @@ android {
 }
 
 dependencies {
+    implementation("androidx.compose.ui:ui:1.7.0")
     val fragment_version = "1.8.3"
+    val room_version = "2.6.1"
     // Java language implementation
     implementation("androidx.fragment:fragment-ktx:$fragment_version")
     // Kotlin
-    implementation("androidx.fragment:fragment-ktx:$fragment_version")
+
+    implementation ("androidx.room:room-runtime:$room_version")
+    implementation("androidx.room:room-ktx:$room_version")
+    ksp("androidx.room:room-compiler:$room_version")
+
 
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")

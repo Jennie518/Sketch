@@ -12,6 +12,7 @@ import android.view.ViewGroup
 import android.widget.SeekBar
 import android.widget.Toast
 import androidx.activity.addCallback
+import androidx.core.graphics.PathParser
 import androidx.fragment.app.activityViewModels
 import com.example.lab2.databinding.FragmentSecondBinding
 import androidx.fragment.app.setFragmentResult
@@ -30,18 +31,28 @@ class SecondFragment : Fragment() {
         )
 
         // handle the call back
-        val callback = requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
+//        val callback = requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner) {
 
             val currentPath = binding.customView.getCurrentPath()
             val currentColor = binding.customView.getCurrentColor()
             val currentBrushSize = binding.customView.getBrushSize()
-            viewModel.saveDrawing(currentPath)
-            viewModel.saveColor(currentColor)
-            viewModel.saveBrushSize(currentBrushSize)
-            Log.d("here1", viewModel.getSavedDrawing().toString())
-            requireActivity().supportFragmentManager.popBackStack()
-
-        }
+//            viewModel.saveDrawing(currentPath)
+            viewModel.saveDrawingToDatabase(currentPath.toString(), currentColor, currentBrushSize)
+//            viewModel.saveColor(currentColor)
+//            viewModel.saveBrushSize(currentBrushSize)
+//            Log.d("here1", viewModel.getSavedDrawing().toString())
+//            requireActivity().supportFragmentManager.popBackStack()
+            val drawingId = arguments?.getInt("drawing_id") ?: 0
+            if (drawingId != 0) {
+                viewModel.loadDrawingFromDatabase(drawingId).observe(viewLifecycleOwner) { drawingEntity ->
+                    drawingEntity?.let {
+                        binding.customView.setPath(PathParser.createPathFromPathData(it.pathData))
+                        binding.customView.setColor(it.color)
+                        binding.customView.setBrushSize(it.brushSize)
+                    }
+                }
+            }
+//        }
 
         viewModel.brushSize.observe(viewLifecycleOwner) { size ->
             size?.let {
@@ -62,7 +73,8 @@ class SecondFragment : Fragment() {
 
         binding.lifecycleOwner = viewLifecycleOwner
 
-        binding.brushSizeSeekbar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+        binding.brushSizeSeekbar.setOnSeekBarChangeListener(object :
+            SeekBar.OnSeekBarChangeListener {
             override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
 
                 binding.customView.setBrushSize(progress.toFloat())
@@ -93,24 +105,24 @@ class SecondFragment : Fragment() {
 
 
         // below are the logics for path's colors
-        binding.blueColor.setOnClickListener(){
+        binding.blueColor.setOnClickListener() {
 
 //            Toast.makeText(requireActivity(),"Clicked blueColor",Toast.LENGTH_SHORT).show()
             binding.customView.setColor(Color.BLUE)
 
         }
 
-        binding.redColor.setOnClickListener(){
+        binding.redColor.setOnClickListener() {
 //            Toast.makeText(requireActivity(),"Clicked redColor",Toast.LENGTH_SHORT).show()
             binding.customView.setColor(Color.RED)
         }
 
-        binding.whiteColor.setOnClickListener(){
+        binding.whiteColor.setOnClickListener() {
 //            Toast.makeText(requireActivity(),"Clicked whiteColor",Toast.LENGTH_SHORT).show()
             binding.customView.setColor(Color.WHITE)
         }
 
-        binding.blackColor.setOnClickListener(){
+        binding.blackColor.setOnClickListener() {
 //            Toast.makeText(requireActivity(),"Clicked blackColor",Toast.LENGTH_SHORT).show()
             binding.customView.setColor(Color.BLACK)
         }
@@ -128,9 +140,12 @@ class SecondFragment : Fragment() {
 //        parentFragmentManager.popBackStack() // Go back to FirstFragment
 //    }
 
-//    override fun onPause() {
-//        super.onPause()
-//        val currentPath = binding.customView.getCurrentPath()
-//        viewModel.saveDrawing(currentPath)
-//    }
+    override fun onPause() {
+        super.onPause()
+        val currentPath = binding.customView.getCurrentPath()
+        val currentColor = binding.customView.getCurrentColor()
+        val currentBrushSize = binding.customView.getBrushSize()
+        viewModel.saveDrawingToDatabase(currentPath.toString(), currentColor, currentBrushSize)
+    }
+
 }

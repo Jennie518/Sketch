@@ -32,7 +32,11 @@ class FirstFragment : Fragment() {
 
         // Navigate to SecondFragment when the button is clicked
         binding.navigateButton.setOnClickListener {
-
+            val bundle = Bundle().apply {
+                putLong("drawing_id", id.toLong())
+            }
+            val secondFragment = SecondFragment()
+            secondFragment.arguments = bundle
 
             parentFragmentManager.beginTransaction()
                 .replace(R.id.fragment_container, SecondFragment())
