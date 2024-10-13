@@ -1,31 +1,37 @@
 package com.example.lab2
 
 import android.app.Application
+
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import android.graphics.Path
 import android.graphics.Paint
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.toArgb
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class CustomViewModel(application: Application) : AndroidViewModel(application){
 
     private val drawingDao: DrawingDao = DrawingDatabase.getDatabase(application).drawingDao()
 
-    // LiveData to hold the drawing path
-    private val _drawingPath = MutableLiveData<Path>()
-    private val _colorPaint = MutableLiveData<Int>()
-    val drawingPath = _drawingPath as LiveData<Path>
-    val colorP = _colorPaint as LiveData<Int>
-    val brushSize = MutableLiveData<Float>()
+    // Change from livedata to stateflow
+    // StateFlow to hold the drawing path
+    private val _drawingPath = MutableStateFlow<Path?>(null)
+    private val _colorPaint = MutableStateFlow<Int>(Color.Black.toArgb())
+    val drawingPath:  StateFlow<Path?> = _drawingPath
+    val colorP : StateFlow<Int> = _colorPaint
+    val brushSize = MutableStateFlow(10f)
 
-    //LiveData to hold the paint brush data
-    private val _brushShape = MutableLiveData<Paint.Cap>().apply { value = Paint.Cap.ROUND } // Default shape
-    val brushShape: LiveData<Paint.Cap> get() = _brushShape
+    //StateFlow to hold the paint brush data
+    private val _brushShape = MutableStateFlow<Paint.Cap>(Paint.Cap.ROUND)
+    val brushShape: StateFlow<Paint.Cap> get() = _brushShape
 
-    // Save the drawing to LiveData
+    // Save the drawing to StateFlow
     fun saveDrawing(path: Path) {
         _drawingPath.value = path
     }
@@ -33,21 +39,25 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
     fun saveColor(color: Int) {
         _colorPaint.value = color
     }
-    // Restore the previous drawing (if any)
-    fun getSavedDrawing(): LiveData<Path> {
-        return drawingPath
-    }
+
     fun saveBrushSize(size: Float) {
         brushSize.value = size
-    }
-    fun getSavedColor(): LiveData<Int> {
-        return colorP
     }
 
     // Update brush shape
     fun setBrushShape(shape: Paint.Cap) {
         _brushShape.value = shape
     }
+    // Restore the previous drawing (if any)
+    fun getSavedDrawing(): StateFlow<Path?> {
+        return drawingPath
+    }
+
+    fun getSavedColor(): StateFlow<Int> {
+        return colorP
+    }
+
+
 
     fun saveDrawingToDatabase(path: String, color: Int, brushSize: Float) {
         viewModelScope.launch(Dispatchers.IO) {
