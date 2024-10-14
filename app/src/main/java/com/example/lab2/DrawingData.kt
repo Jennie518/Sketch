@@ -6,8 +6,9 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "drawings")
 data class DrawingData(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val pathData: String,
+    val filePath: String,
     val color: Int,
-    val brushSize: Float
+    val brushSize: Float,
+    val date: Long
 )
 

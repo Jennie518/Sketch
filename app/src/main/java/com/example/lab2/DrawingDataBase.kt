@@ -9,6 +9,7 @@ import androidx.room.Query
 import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.Update
+import kotlinx.coroutines.flow.Flow
 
 @Database(entities = [DrawingData::class], version = 1, exportSchema = false)
 abstract class DrawingDatabase : RoomDatabase() {
@@ -24,7 +25,9 @@ abstract class DrawingDatabase : RoomDatabase() {
                     context.applicationContext,
                     DrawingDatabase::class.java,
                     "drawing_database"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }
@@ -44,8 +47,11 @@ interface DrawingDao {
     suspend fun updateDrawing(drawing: DrawingData)
 
     @Query("SELECT * FROM drawings WHERE id = :id")
-    fun getDrawing(id: Int): LiveData<DrawingData>
+    fun getDrawingAsFlow(id: Int): Flow<DrawingData>
 
     @Query("SELECT * FROM drawings")
     fun getAllDrawings(): LiveData<List<DrawingData>>
+
+    @Query("SELECT id FROM drawings ORDER BY date DESC LIMIT 1")
+    fun getLastDrawingAsFlow(): Flow<Int?>
 }

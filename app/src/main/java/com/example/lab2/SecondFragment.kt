@@ -1,6 +1,11 @@
 package com.example.lab2
 
 
+import android.content.Context
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
+
+
 import android.os.Bundle
 import android.util.Log
 import androidx.fragment.app.Fragment
@@ -11,6 +16,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.SeekBar
 import android.widget.Toast
+
+
 import androidx.activity.addCallback
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
@@ -203,30 +210,40 @@ import androidx.navigation.NavController
 
 
 @Composable
-fun CanvasScreen(navController: NavController, viewModel: CustomViewModel = viewModel()) {
+fun CanvasScreen(
+    navController: NavController,
+    drawingId: Int?,
+    viewModel: CustomViewModel = viewModel()
+) {
 
-    lateinit var binding: FragmentSecondBinding
 
-    val currentPath by viewModel.drawingPath.collectAsState()
-    val currentColor by viewModel.colorP.collectAsState()
-    val currentBrushSize by viewModel.brushSize.collectAsState()
-
-    var localPath by remember { mutableStateOf(Path()) }
+    var localBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var localColor by remember { mutableStateOf(Color.Black) }
     var localBrushSize by remember { mutableStateOf(10f) }
 
     // the update logic when Viewmodel values changes
-    LaunchedEffect(currentPath, currentColor, currentBrushSize) {
-        currentPath?.let { localPath = it }
-        localColor = Color(currentColor)
-        localBrushSize = currentBrushSize
+    LaunchedEffect(drawingId) {
+        if (drawingId != null) {
+            viewModel.loadDrawingFromDatabase(drawingId).observeForever { drawingEntity ->
+                drawingEntity?.let {
+                    localBitmap = BitmapFactory.decodeFile(it.filePath)
+                    localColor = Color(it.color)
+                    localBrushSize = it.brushSize
+                }
+            }
+        }
     }
 
 
     BackHandler(true) {
-        viewModel.saveDrawing(localPath)
-        viewModel.saveColor(localColor.toArgb())
-        viewModel.saveBrushSize(localBrushSize)
+        localBitmap?.let {
+            viewModel.saveDrawingToDatabase(
+                navController.context,
+                it,
+                localColor.toArgb(),
+                localBrushSize
+            )
+        }
         Log.d("BACK", "OnBackPressed and Drawing Saved: " + viewModel.getSavedDrawing().toString())
         navController.popBackStack()
     }
@@ -237,6 +254,7 @@ fun CanvasScreen(navController: NavController, viewModel: CustomViewModel = view
         AndroidView(modifier = Modifier.fillMaxSize(),
             factory = { context ->
                 CustomView(context = context, attrs = null).apply {
+                    localBitmap?.let { setBitmap(it) }
                     setColor(localColor.toArgb())
                     setBrushSize(localBrushSize)
                 }
@@ -247,24 +265,24 @@ fun CanvasScreen(navController: NavController, viewModel: CustomViewModel = view
             }
         )
         Column(modifier = Modifier.fillMaxSize(), verticalArrangement = Arrangement.Bottom) {
-            DrawingUI(viewModel)
+            DrawingUI(viewModel, localColor, localBrushSize)
         }
     }
 }
 
 @Composable
-fun DrawingUI(viewModel: CustomViewModel) {
+fun DrawingUI(viewModel: CustomViewModel, currentColor: Color, currentBrushSize: Float) {
 
-    var brushSize by remember { mutableStateOf(10f) }
-    var currentColor by remember { mutableStateOf(Color.Black) }
-
-    val savedBrushSize by viewModel.brushSize.collectAsState(initial = 10f)
-    val savedColor by viewModel.colorP.collectAsState(initial = Color.Black.toArgb())
-
-    LaunchedEffect(savedBrushSize, savedColor) {
-        brushSize = savedBrushSize
-        currentColor = Color(savedColor)
-    }
+//    var brushSize by remember { mutableStateOf(10f) }
+//    var currentColor by remember { mutableStateOf(Color.Black) }
+//
+//    val savedBrushSize by viewModel.brushSize.collectAsState(initial = 10f)
+//    val savedColor by viewModel.colorP.collectAsState(initial = Color.Black.toArgb())
+//
+//    LaunchedEffect(savedBrushSize, savedColor) {
+//        brushSize = savedBrushSize
+//        currentColor = Color(savedColor)
+//    }
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -285,10 +303,9 @@ fun DrawingUI(viewModel: CustomViewModel) {
             }
         }
         Slider(
-            value = brushSize,
+            value = currentBrushSize,
             onValueChange = { newSize ->
-                brushSize = newSize
-                viewModel.saveBrushSize(brushSize)
+                viewModel.saveBrushSize(newSize)
             }, valueRange = 1f..50f,
             modifier = Modifier.padding(horizontal = 16.dp)
         )
@@ -297,32 +314,148 @@ fun DrawingUI(viewModel: CustomViewModel) {
                 .fillMaxWidth()
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
-        ){
+        ) {
             ColorButton(color = Color.Blue) { selectedColor ->
-                currentColor = selectedColor
-                viewModel.saveColor(currentColor.toArgb())
+                viewModel.saveColor(selectedColor.toArgb())
             }
             ColorButton(color = Color.Red) { selectedColor ->
-                currentColor = selectedColor
-                viewModel.saveColor(currentColor.toArgb())
+                viewModel.saveColor(selectedColor.toArgb())
             }
             ColorButton(color = Color.Black) { selectedColor ->
-                currentColor = selectedColor
-                viewModel.saveColor(currentColor.toArgb())
+                viewModel.saveColor(selectedColor.toArgb())
             }
             ColorButton(color = Color.White) { selectedColor ->
-                currentColor = selectedColor
-                viewModel.saveColor(currentColor.toArgb())
+                viewModel.saveColor(selectedColor.toArgb())
             }
         }
     }
 }
 
 @Composable
-fun ColorButton(color: Color,onClick:(Color)->Unit){
+fun ColorButton(color: Color, onClick: (Color) -> Unit) {
     IconButton(onClick = { onClick(color) }, modifier = Modifier.size(50.dp)) {
         Box(
-            modifier = Modifier.size(50.dp).background(color)
+            modifier = Modifier
+                .size(50.dp)
+                .background(color)
         )
     }
 }
+//    ====== =
+//    import androidx . core . graphics . PathParser
+//            import androidx . fragment . app . activityViewModels
+//            import com . example . lab2 . databinding . FragmentSecondBinding
+//            import java . io . File
+//            import java . io . FileOutputStream
+//            import java . io . IOException
+//
+//    class SecondFragment : Fragment() {
+//
+//        private val viewModel: CustomViewModel by activityViewModels()
+//        private lateinit var binding: FragmentSecondBinding
+//
+//        override fun onCreateView(
+//            inflater: LayoutInflater, container: ViewGroup?,
+//            savedInstanceState: Bundle?
+//        ): View? {
+//            binding = DataBindingUtil.inflate(
+//                inflater, R.layout.fragment_second, container, false
+//            )
+//
+//            val drawingId = arguments?.getInt("drawing_id") ?: 0
+//            Log.d("Navigation", "Received drawing_id: $drawingId")
+//
+//            if (drawingId != 0) {
+//                viewModel.loadDrawingFromDatabase(drawingId)
+//                    .observe(viewLifecycleOwner) { drawingEntity ->
+//                        drawingEntity?.let {
+//                            Log.d(
+//                                "Database",
+//                                "Loaded drawing with ID: ${it.id}, file path: ${it.filePath}"
+//                            )
+//                            val bitmap = BitmapFactory.decodeFile(it.filePath)
+//                            if (bitmap != null) {
+//                                binding.customView.setBitmap(bitmap)
+//                            }
+//                            binding.customView.setColor(it.color)
+//                            binding.customView.setBrushSize(it.brushSize)
+//                        } ?: run {
+//                            Log.d("Database", "No drawing found for ID: $drawingId")
+//                        }
+//                    }
+//            } else {
+//                Toast.makeText(context, "Starting a new drawing.", Toast.LENGTH_SHORT).show()
+//            }
+//
+//            setupBrushAndColorListeners()
+//
+//            return binding.root
+//        }
+//
+//        private fun setupBrushAndColorListeners() {
+//            val customView = binding.customView
+//
+//            binding.roundBrushButton.setOnClickListener {
+//                customView.setBrushShape(BrushShape.ROUND)
+//            }
+//
+//            binding.squareBrushButton.setOnClickListener {
+//                customView.setBrushShape(BrushShape.SQUARE)
+//            }
+//
+//            binding.blueColor.setOnClickListener {
+//                binding.customView.setColor(Color.BLUE)
+//            }
+//
+//            binding.redColor.setOnClickListener {
+//                binding.customView.setColor(Color.RED)
+//            }
+//
+//            binding.whiteColor.setOnClickListener {
+//                binding.customView.setColor(Color.WHITE)
+//            }
+//
+//            binding.blackColor.setOnClickListener {
+//                binding.customView.setColor(Color.BLACK)
+//            }
+//
+//            binding.brushSizeSeekbar.setOnSeekBarChangeListener(object :
+//                SeekBar.OnSeekBarChangeListener {
+//                override fun onProgressChanged(
+//                    seekBar: SeekBar?,
+//                    progress: Int,
+//                    fromUser: Boolean
+//                ) {
+//                    binding.customView.setBrushSize(progress.toFloat())
+//                }
+//
+//                override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+//
+//                override fun onStopTrackingTouch(seekBar: SeekBar?) {
+//                    viewModel.saveBrushSize(binding.customView.getBrushSize())
+//                }
+//            })
+//        }
+//
+//        override fun onPause() {
+//            super.onPause()
+//            val currentBitmap = binding.customView.getBitmap()
+//            val currentColor = binding.customView.getCurrentColor()
+//            val currentBrushSize = binding.customView.getBrushSize()
+//
+//            if (currentBitmap != null) {
+//
+//                viewModel.saveDrawingToDatabase(
+//                    requireContext(),
+//                    currentBitmap,
+//                    currentColor,
+//                    currentBrushSize
+//                )
+//            }
+//        }
+//
+//
+//
+//
+//        >>>>>>> dc51a976b27044c4248bb7221803114ce4b3ff16
+//    }

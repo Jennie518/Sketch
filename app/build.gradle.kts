@@ -46,6 +46,8 @@ android {
 }
 
 dependencies {
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
+    implementation ("androidx.compose.material3:material3:1.3.0")
     implementation("androidx.compose.ui:ui:1.7.3")
     implementation("androidx.compose.material3:material3-android:1.3.0")
     implementation("androidx.compose.ui:ui-tooling-preview-android:1.7.3")
