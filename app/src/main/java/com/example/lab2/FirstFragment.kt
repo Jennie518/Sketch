@@ -6,20 +6,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.Toast
+import androidx.fragment.app.activityViewModels
 import com.example.lab2.databinding.FragmentFirstBinding
 import androidx.fragment.app.setFragmentResultListener
 
-// TODO: Rename parameter arguments, choose names that match
-// the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-private const val ARG_PARAM1 = "param1"
-private const val ARG_PARAM2 = "param2"
-
-/**
- * A simple [Fragment] subclass.
- * Use the [FirstFragment.newInstance] factory method to
- * create an instance of this fragment.
- */
 class FirstFragment : Fragment() {
+    private val viewModel: CustomViewModel by activityViewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -27,26 +20,26 @@ class FirstFragment : Fragment() {
     ): View? {
         val binding = FragmentFirstBinding.inflate(layoutInflater, container, false)
 
-
-        //val navigateButton = view.findViewById<Button>(R.id.navigate_button)
-
-        // Navigate to SecondFragment when the button is clicked
         binding.navigateButton.setOnClickListener {
-            val bundle = Bundle().apply {
-                putLong("drawing_id", id.toLong())
+            viewModel.getLastSavedDrawingId().observe(viewLifecycleOwner) { drawingId ->
+                if (drawingId != null) {
+                    val bundle = Bundle().apply {
+                        putInt("drawing_id", drawingId)
+                    }
+                    val secondFragment = SecondFragment()
+                    secondFragment.arguments = bundle
+
+                    parentFragmentManager.beginTransaction()
+                        .replace(R.id.fragment_container, secondFragment)
+                        .addToBackStack(null)
+                        .commit()
+                    Toast.makeText(requireContext(), "Navigating with drawing_id: $drawingId", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(requireContext(), "No saved drawing found", Toast.LENGTH_SHORT).show()
+                }
             }
-            val secondFragment = SecondFragment()
-            secondFragment.arguments = bundle
-
-            parentFragmentManager.beginTransaction()
-                .replace(R.id.fragment_container, SecondFragment())
-                .addToBackStack(null)
-                .commit()
         }
-
 
         return binding.root
     }
-
-
 }

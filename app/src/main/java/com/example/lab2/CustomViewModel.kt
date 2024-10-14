@@ -1,18 +1,32 @@
 package com.example.lab2
 
 import android.app.Application
+import android.content.Context
+import android.graphics.Bitmap
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import android.graphics.Path
 import android.graphics.Paint
+import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
+import java.io.IOException
 
 class CustomViewModel(application: Application) : AndroidViewModel(application){
 
-    private val drawingDao: DrawingDao = DrawingDatabase.getDatabase(application).drawingDao()
+//    private val drawingDao: DrawingDao = DrawingDatabase.getDatabase(application).drawingDao()
+    private val repository: DrawingRepository
+
+    init {
+        val drawingDao = DrawingDatabase.getDatabase(application).drawingDao()
+        repository = DrawingRepository(drawingDao)
+    }
+
+
 
     // LiveData to hold the drawing path
     private val _drawingPath = MutableLiveData<Path>()
@@ -49,15 +63,59 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
         _brushShape.value = shape
     }
 
-    fun saveDrawingToDatabase(path: String, color: Int, brushSize: Float) {
+    fun saveDrawingToDatabase(context: Context, bitmap: Bitmap, color: Int, brushSize: Float) {
+        val currentTime = System.currentTimeMillis()
+        val fileName = "drawing_${currentTime}.png"
         viewModelScope.launch(Dispatchers.IO) {
-            val drawing = DrawingData(pathData = path, color = color, brushSize = brushSize)
-            val id = drawingDao.insertDrawing(drawing)
+            val filePath = saveBitmapToStorage(context, bitmap, fileName)
+            if (filePath != null) {
+                val drawing = DrawingData(
+                    filePath = filePath,
+                    color = color,
+                    brushSize = brushSize,
+                    date = currentTime
+                )
+                repository.insert(drawing)
+            }
         }
     }
 
-    fun loadDrawingFromDatabase(id: Int): LiveData<DrawingData> {
-        return drawingDao.getDrawing(id)
+    fun saveBitmapToStorage(context: Context, bitmap: Bitmap, fileName: String): String? {
+        val directory = context.getExternalFilesDir("Drawings")
+        if (directory != null && !directory.exists()) {
+            directory.mkdirs()
+        }
+
+        val file = File(directory, fileName)
+        var outputStream: FileOutputStream? = null
+
+        return try {
+            outputStream = FileOutputStream(file)
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream) // 将 Bitmap 压缩为 PNG 并写入文件
+            outputStream.flush()
+
+            Log.d("SavePath", "Bitmap saved at: ${file.absolutePath}")
+
+            file.absolutePath
+        } catch (e: IOException) {
+            e.printStackTrace()
+            null
+        } finally {
+            outputStream?.close()
+        }
     }
+
+
+    fun loadDrawingFromDatabase(drawingId: Int): LiveData<DrawingData> {
+        return repository.getDrawing(drawingId)
+    }
+    fun getLastSavedDrawingId(): LiveData<Int?> {
+        return repository.getLastSavedDrawingId()
+    }
+
+
+
+
+
 
 }
