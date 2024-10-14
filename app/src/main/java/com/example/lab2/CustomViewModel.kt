@@ -79,9 +79,10 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
 
 
 
-    fun saveDrawingToDatabase(context: Context, bitmap: Bitmap, color: Int, brushSize: Float) {
+    fun saveDrawingToDatabase(context: Context, bitmap: Bitmap, color: Int, brushSize: Float): Boolean {
         val currentTime = System.currentTimeMillis()
         val fileName = "drawing_${currentTime}.png"
+        var isSaved = false
         viewModelScope.launch(Dispatchers.IO) {
             val filePath = saveBitmapToStorage(context, bitmap, fileName)
             if (filePath != null) {
@@ -92,13 +93,16 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
                     date = currentTime
                 )
                 repository.insert(drawing)
+                isSaved = true
             }
         }
+        return isSaved
     }
 
+
     fun saveBitmapToStorage(context: Context, bitmap: Bitmap, fileName: String): String? {
-        val directory = context.getExternalFilesDir("Drawings")
-        if (directory != null && !directory.exists()) {
+        val directory = context.getExternalFilesDir("Drawings") ?: return null
+        if (!directory.exists()) {
             directory.mkdirs()
         }
 
@@ -122,6 +126,8 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
     }
 
 
+
+
     fun loadDrawingFromDatabase(drawingId: Int): StateFlow<DrawingData?> {
         val drawingDataFlow = MutableStateFlow<DrawingData?>(null)
         viewModelScope.launch(Dispatchers.IO) {
@@ -131,10 +137,11 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
         }
         return drawingDataFlow
     }
-    fun getLastSavedDrawingId(): StateFlow<Int?> {
 
+    fun getLastSavedDrawingId(): Flow<Int?> {
         return repository.getLastSavedDrawingId()
     }
+
 
 
 

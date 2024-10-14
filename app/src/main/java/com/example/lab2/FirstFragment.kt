@@ -11,6 +11,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import android.widget.Toast
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.runtime.getValue
 import androidx.lifecycle.viewmodel.compose.viewModel
 
 
@@ -20,7 +22,8 @@ fun StartScreen(
     onNavigate: (Int) -> Unit
 ) {
     // Collecting drawingId from the ViewModel
-    val drawingId by viewModel.getLastSavedDrawingId().collectAsState()
+    val context = LocalContext.current
+    val drawingId by viewModel.getLastSavedDrawingId().collectAsState(initial = null)
 
     Box(
         modifier = Modifier.fillMaxWidth(),
@@ -30,7 +33,7 @@ fun StartScreen(
             drawingId?.let { id ->
                 onNavigate(id)
             } ?: run {
-                Toast.makeText(LocalContext.current, "Drawing ID is not found", Toast.LENGTH_SHORT)
+                Toast.makeText(context, "Drawing ID is not found", Toast.LENGTH_SHORT)
                     .show()
             }
         }) {
