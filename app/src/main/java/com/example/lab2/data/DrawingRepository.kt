@@ -26,7 +26,4 @@ class DrawingRepository(private val drawingDao: DrawingDao) {
         return drawingDao.getDrawingAsFlow(id)
     }
 
-    fun getAllDrawings(): LiveData<List<DrawingData>> {
-        return drawingDao.getAllDrawings()
-    }
 }

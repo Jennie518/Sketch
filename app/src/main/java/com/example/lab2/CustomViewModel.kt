@@ -101,7 +101,7 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
         return isSaved
     }
 
-
+//    save drawing to device storage
     fun saveBitmapToStorage(context: Context, bitmap: Bitmap, fileName: String): String? {
         val directory = context.getExternalFilesDir("Drawings") ?: return null
         if (!directory.exists()) {
