@@ -24,7 +24,9 @@ abstract class DrawingDatabase : RoomDatabase() {
                     context.applicationContext,
                     DrawingDatabase::class.java,
                     "drawing_database"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration()
+                    .build()
                 INSTANCE = instance
                 instance
             }
@@ -48,4 +50,7 @@ interface DrawingDao {
 
     @Query("SELECT * FROM drawings")
     fun getAllDrawings(): LiveData<List<DrawingData>>
+
+    @Query("SELECT id FROM drawings ORDER BY date DESC LIMIT 1")
+    fun getLastDrawingId(): LiveData<Int?>
 }

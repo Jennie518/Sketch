@@ -1,21 +1,27 @@
 package com.example.lab2
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
 import android.util.AttributeSet
+import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 
 class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) {
-//    private val path = Path()
+
+    //    private val path = Path()
 //    private val paint = Paint()
 //    private var brushShape = Paint.Cap.ROUND
 //    private var currColor =  Color.BLACK
 //    private var brushSize = 10f
     private val paths = mutableListOf<Pair<Path, Paint>>()
+    private var bitmap: Bitmap? = null
+
+
 
     private var currentPath = Path()
     private var currentPaint = Paint()
@@ -91,6 +97,9 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
+        bitmap?.let {
+            canvas.drawBitmap(it, 0f, 0f, null)
+        }
         // Draw all paths with their respective paints
         for ((path, paint) in paths) {
             canvas.drawPath(path, paint)
@@ -98,15 +107,7 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
         // Draw the current path with the current paint
         canvas.drawPath(currentPath, currentPaint)
     }
-    // Expose methods to interact with the path from the ViewModel
-    fun getCurrentPath(): Path {
-        return Path(currentPath) // Return a copy of the current path
-    }
 
-    fun setPath(newPath: Path) {
-        currentPath.set(newPath)
-        invalidate() // Redraw the view with the new path
-    }
 
     fun setColor(color: Int){
         currentPaint = createNewPaint()
@@ -116,5 +117,19 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
     fun getCurrentColor(): Int {
         return currentPaint.color
     }
+    fun getBitmap(): Bitmap? {
+        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(bitmap)
+        draw(canvas)
+        return bitmap
+    }
+
+    fun setBitmap(bitmap: Bitmap) {
+        this.bitmap = bitmap
+        Log.d("CustomView", "Bitmap set successfully in CustomView")
+        invalidate()
+
+    }
+
 
 }
