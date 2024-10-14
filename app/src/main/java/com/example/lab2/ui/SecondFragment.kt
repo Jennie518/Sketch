@@ -24,6 +24,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,12 +53,20 @@ fun CanvasScreen(
     var localColor by remember { mutableStateOf(Color.Black) }
     var localBrushSize by remember { mutableStateOf(10f) }
     var brushShape by remember { mutableStateOf(BrushShape.ROUND) }
+    var customViewReference: CustomView? by remember { mutableStateOf(null) }
 
     if (drawingId != null) {
+        Log.d("CanvasScreen", "Drawing ID: $drawingId")
         val drawingData by viewModel.loadDrawingFromDatabase(drawingId).collectAsState(initial = null)
 
         drawingData?.let {
+            Log.d("CanvasScreen", "Loading bitmap from file path: ${it.filePath}")
             localBitmap = BitmapFactory.decodeFile(it.filePath)
+            if (localBitmap == null) {
+                Log.e("CanvasScreen", "Failed to load bitmap from path: ${it.filePath}")
+            } else {
+                Log.d("CanvasScreen", "Bitmap successfully loaded")
+            }
             localColor = Color(it.color)
             localBrushSize = it.brushSize
         }
@@ -82,16 +91,25 @@ fun CanvasScreen(
             modifier = Modifier.fillMaxSize(),
             factory = { context ->
                 CustomView(context = context, attrs = null).apply {
-                    localBitmap?.let { setBitmap(it) }
+                    localBitmap?.let {
+                        setBitmap(it)
+                        Log.d("CanvasScreen", "Bitmap set successfully in CustomView")
+                    }
                     setColor(localColor.toArgb())
                     setBrushSize(localBrushSize)
                     setBrushShape(brushShape)
+                    customViewReference = this // 保存 CustomView 的引用
                 }
             },
             update = { customView ->
+                localBitmap?.let {
+                    Log.d("CanvasScreen", "Updating bitmap in CustomView")
+                    customView.setBitmap(it)
+                } ?: Log.e("CanvasScreen", "localBitmap is null during update in CustomView")
                 customView.setColor(localColor.toArgb())
                 customView.setBrushSize(localBrushSize)
                 customView.setBrushShape(brushShape)
+                customView.invalidate()
             }
         )
         Column(
@@ -102,16 +120,33 @@ fun CanvasScreen(
                 viewModel,
                 localColor,
                 localBrushSize,
+                customViewReference,
                 onBrushShapeChange = { newBrushShape ->
                     brushShape = newBrushShape
+                    customViewReference?.setBrushShape(newBrushShape)
+                    customViewReference?.invalidate()
                 },
                 onBrushSizeChange = { newSize ->
                     localBrushSize = newSize
+                    viewModel.saveBrushSize(newSize)
+                    customViewReference?.setBrushSize(newSize)
+                    customViewReference?.invalidate()
                 },
                 onColorChange = { newColor ->
                     localColor = newColor
+                    viewModel.saveColor(newColor.toArgb())
+                    customViewReference?.setColor(newColor.toArgb())
+                    customViewReference?.invalidate()
                 }
             )
+        }
+    }
+    LaunchedEffect(localColor, localBrushSize, brushShape) {
+        customViewReference?.let {
+            it.setColor(localColor.toArgb())
+            it.setBrushSize(localBrushSize)
+            it.setBrushShape(brushShape)
+            it.invalidate()
         }
     }
 }
@@ -121,6 +156,7 @@ fun DrawingUI(
     viewModel: CustomViewModel,
     currentColor: Color,
     currentBrushSize: Float,
+    customView: CustomView?,
     onBrushShapeChange: (BrushShape) -> Unit,
     onBrushSizeChange: (Float) -> Unit,
     onColorChange: (Color) -> Unit
@@ -136,10 +172,18 @@ fun DrawingUI(
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            Button(onClick = { onBrushShapeChange(BrushShape.ROUND) }) {
+            Button(onClick = {
+                onBrushShapeChange(BrushShape.ROUND)
+                customView?.setBrushShape(BrushShape.ROUND)
+                customView?.invalidate()
+            }) {
                 Text(text = "Round Brush")
             }
-            Button(onClick = { onBrushShapeChange(BrushShape.SQUARE) }) {
+            Button(onClick = {
+                onBrushShapeChange(BrushShape.SQUARE)
+                customView?.setBrushShape(BrushShape.SQUARE)
+                customView?.invalidate()
+            }) {
                 Text(text = "Square Brush")
             }
         }
@@ -148,6 +192,8 @@ fun DrawingUI(
             onValueChange = { newSize ->
                 onBrushSizeChange(newSize)
                 viewModel.saveBrushSize(newSize)
+                customView?.setBrushSize(newSize)
+                customView?.invalidate()
             },
             valueRange = 1f..50f,
             modifier = Modifier.padding(horizontal = 16.dp)
@@ -161,22 +207,31 @@ fun DrawingUI(
             ColorButton(color = Color.Blue) { selectedColor ->
                 viewModel.saveColor(selectedColor.toArgb())
                 onColorChange(selectedColor)
+                customView?.setColor(selectedColor.toArgb())
+                customView?.invalidate() // 强制视图重新绘制
             }
             ColorButton(color = Color.Red) { selectedColor ->
                 viewModel.saveColor(selectedColor.toArgb())
                 onColorChange(selectedColor)
+                customView?.setColor(selectedColor.toArgb())
+                customView?.invalidate() // 强制视图重新绘制
             }
             ColorButton(color = Color.Black) { selectedColor ->
                 viewModel.saveColor(selectedColor.toArgb())
                 onColorChange(selectedColor)
+                customView?.setColor(selectedColor.toArgb())
+                customView?.invalidate()
             }
             ColorButton(color = Color.White) { selectedColor ->
                 viewModel.saveColor(selectedColor.toArgb())
                 onColorChange(selectedColor)
+                customView?.setColor(selectedColor.toArgb())
+                customView?.invalidate()
             }
         }
     }
 }
+
 
 
 @Composable
@@ -189,3 +244,4 @@ fun ColorButton(color: Color, onClick: (Color) -> Unit) {
         )
     }
 }
+

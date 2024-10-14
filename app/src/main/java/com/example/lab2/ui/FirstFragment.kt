@@ -49,8 +49,8 @@ fun StartScreen(
                         .fillMaxWidth()
                         .padding(16.dp)
                         .clickable {
-
                             navController.navigate("canvas_screen/${drawing.id}")
+
                         }
                 ) {
                     thumbnailBitmap?.let { bitmap ->

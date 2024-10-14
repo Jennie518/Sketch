@@ -95,18 +95,32 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
         return currentPaint.strokeWidth
     }
 
+    fun setBitmap(bitmap: Bitmap) {
+        if (bitmap != null) {
+            this.bitmap = bitmap
+            Log.d("CustomView", "Bitmap set successfully with size: ${bitmap.width}x${bitmap.height}")
+        } else {
+            Log.e("CustomView", "Bitmap is null when calling setBitmap")
+        }
+        invalidate() // Trigger a redraw
+    }
+
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         bitmap?.let {
+            Log.d("CustomView", "Drawing bitmap on canvas, size: ${it.width}x${it.height}")
             canvas.drawBitmap(it, 0f, 0f, null)
         }
         // Draw all paths with their respective paints
         for ((path, paint) in paths) {
             canvas.drawPath(path, paint)
+            Log.d("CustomView", "Drawing path on canvas")
         }
         // Draw the current path with the current paint
         canvas.drawPath(currentPath, currentPaint)
     }
+
+
 
 
     fun setColor(color: Int){
@@ -124,12 +138,7 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
         return bitmap
     }
 
-    fun setBitmap(bitmap: Bitmap) {
-        this.bitmap = bitmap
-        Log.d("CustomView", "Bitmap set successfully in CustomView")
-        invalidate()
 
-    }
 
 
 }

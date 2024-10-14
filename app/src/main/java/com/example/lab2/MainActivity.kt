@@ -10,7 +10,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.lab2.ui.CanvasScreen
-import com.example.lab2.ui.DrawingListScreen
 import com.example.lab2.ui.StartScreen
 
 class MainActivity : AppCompatActivity() {
@@ -118,10 +117,10 @@ fun ComposeNavigation() {
 //    }
     NavHost(navController = navController, startDestination = "start_screen") {
         composable("start_screen") { StartScreen(navController) }
-        composable("canvas_screen") { CanvasScreen(navController = navController, drawingId = null) } // 这里处理新画布
+        composable("canvas_screen") { CanvasScreen(navController = navController, drawingId = null) }
         composable("canvas_screen/{drawingId}") { backStackEntry ->
             val drawingId = backStackEntry.arguments?.getString("drawingId")?.toInt()
-            CanvasScreen(navController, drawingId) // 传递drawingId
+            CanvasScreen(navController, drawingId)
         }
     }
 }

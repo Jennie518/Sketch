@@ -143,7 +143,6 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
     fun getLastSavedDrawingId(): Flow<Int?> {
         return repository.getLastSavedDrawingId()
     }
-
     fun getAllDrawings(): LiveData<List<DrawingData>> {
         return drawingDao.getAllDrawings()
     }
