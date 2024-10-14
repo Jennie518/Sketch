@@ -21,8 +21,6 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
     private val paths = mutableListOf<Pair<Path, Paint>>()
     private var bitmap: Bitmap? = null
 
-
-
     private var currentPath = Path()
     private var currentPaint = Paint()
 
@@ -69,6 +67,7 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
             MotionEvent.ACTION_UP -> {
                 // add path and paint into the list when fingers leave the canvas
                 paths.add(Pair(currentPath, currentPaint))
+//                paths.add(Pair(currentPath, createNewPaint()))
                 invalidate()
             }
         }
@@ -90,6 +89,7 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
     fun setBrushSize(brushSize: Float) {
         currentPaint = createNewPaint()
         currentPaint.strokeWidth = brushSize
+//        invalidate()
     }
     fun getBrushSize(): Float {
         return currentPaint.strokeWidth

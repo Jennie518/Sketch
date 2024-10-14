@@ -5,8 +5,6 @@ import android.app.Application
 import android.content.Context
 import android.graphics.Bitmap
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import android.graphics.Paint
 
 import androidx.compose.ui.graphics.Color
@@ -16,8 +14,12 @@ import androidx.compose.ui.graphics.toArgb
 import android.util.Log
 
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.viewModelScope
+import com.example.lab2.data.DrawingDao
+import com.example.lab2.data.DrawingData
+import com.example.lab2.data.DrawingDatabase
+import com.example.lab2.data.DrawingRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,7 +31,7 @@ import java.io.IOException
 
 class CustomViewModel(application: Application) : AndroidViewModel(application){
 
-//    private val drawingDao: DrawingDao = DrawingDatabase.getDatabase(application).drawingDao()
+    private val drawingDao: DrawingDao = DrawingDatabase.getDatabase(application).drawingDao()
     private val repository: DrawingRepository
 
     init {
@@ -141,6 +143,11 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
     fun getLastSavedDrawingId(): Flow<Int?> {
         return repository.getLastSavedDrawingId()
     }
+
+    fun getAllDrawings(): LiveData<List<DrawingData>> {
+        return drawingDao.getAllDrawings()
+    }
+
 
 
 
