@@ -112,8 +112,8 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
     }
 
     fun getBitmap(): Bitmap {
-        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(bitmap)
+        val resultBitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val canvas = Canvas(resultBitmap)
 
         bitmap?.let {
             canvas.drawBitmap(it, 0f, 0f, null)
@@ -125,6 +125,6 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
 
         canvas.drawPath(currentPath, currentPaint)
 
-        return bitmap
+        return resultBitmap
     }
 }
