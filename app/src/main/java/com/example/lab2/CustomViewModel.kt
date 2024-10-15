@@ -1,24 +1,38 @@
 package com.example.lab2
 
 import android.app.Application
+
 import android.content.Context
 import android.graphics.Bitmap
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import android.graphics.Path
+
 import android.graphics.Paint
+
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.toArgb
+
 import android.util.Log
+
 import androidx.lifecycle.AndroidViewModel
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.viewModelScope
+import com.example.lab2.data.DrawingDao
+import com.example.lab2.data.DrawingData
+import com.example.lab2.data.DrawingDatabase
+import com.example.lab2.data.DrawingRepository
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
 
 class CustomViewModel(application: Application) : AndroidViewModel(application){
 
-//    private val drawingDao: DrawingDao = DrawingDatabase.getDatabase(application).drawingDao()
+    private val drawingDao: DrawingDao = DrawingDatabase.getDatabase(application).drawingDao()
     private val repository: DrawingRepository
 
     init {
@@ -28,18 +42,19 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
 
 
 
-    // LiveData to hold the drawing path
-    private val _drawingPath = MutableLiveData<Path>()
-    private val _colorPaint = MutableLiveData<Int>()
-    val drawingPath = _drawingPath as LiveData<Path>
-    val colorP = _colorPaint as LiveData<Int>
-    val brushSize = MutableLiveData<Float>()
+    // Change from livedata to stateflow
+    // StateFlow to hold the drawing path
+    private val _drawingPath = MutableStateFlow<Path?>(null)
+    private val _colorPaint = MutableStateFlow<Int>(Color.Black.toArgb())
+    val drawingPath:  StateFlow<Path?> = _drawingPath
+    val colorP : StateFlow<Int> = _colorPaint
+    val brushSize = MutableStateFlow(10f)
 
-    //LiveData to hold the paint brush data
-    private val _brushShape = MutableLiveData<Paint.Cap>().apply { value = Paint.Cap.ROUND } // Default shape
-    val brushShape: LiveData<Paint.Cap> get() = _brushShape
+    //StateFlow to hold the paint brush data
+    private val _brushShape = MutableStateFlow<Paint.Cap>(Paint.Cap.ROUND)
+    val brushShape: StateFlow<Paint.Cap> get() = _brushShape
 
-    // Save the drawing to LiveData
+    // Save the drawing to StateFlow
     fun saveDrawing(path: Path) {
         _drawingPath.value = path
     }
@@ -47,23 +62,33 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
     fun saveColor(color: Int) {
         _colorPaint.value = color
     }
-    // Restore the previous drawing (if any)
-    fun getSavedDrawing(): LiveData<Path> {
-        return drawingPath
-    }
+
     fun saveBrushSize(size: Float) {
         brushSize.value = size
-    }
-    fun getSavedColor(): LiveData<Int> {
-        return colorP
     }
 
     // Update brush shape
     fun setBrushShape(shape: Paint.Cap) {
         _brushShape.value = shape
     }
+    // Restore the previous drawing (if any)
+    fun getSavedDrawing(): StateFlow<Path?> {
+        return drawingPath
+    }
 
-    fun saveDrawingToDatabase(context: Context, bitmap: Bitmap, color: Int, brushSize: Float) {
+    fun getSavedColor(): StateFlow<Int> {
+        return colorP
+    }
+
+
+
+    fun saveDrawingToDatabase(
+        context: Context,
+        bitmap: Bitmap,
+        color: Int,
+        brushSize: Float,
+        onComplete: (Boolean) -> Unit
+    ) {
         val currentTime = System.currentTimeMillis()
         val fileName = "drawing_${currentTime}.png"
         viewModelScope.launch(Dispatchers.IO) {
@@ -76,13 +101,24 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
                     date = currentTime
                 )
                 repository.insert(drawing)
+                Log.d("SaveDrawing", "Drawing saved successfully in the database")
+                withContext(Dispatchers.Main) {
+                    onComplete(true)
+                }
+            } else {
+                Log.e("SaveDrawing", "Failed to save the bitmap to storage")
+                withContext(Dispatchers.Main) {
+                    onComplete(false)
+                }
             }
         }
     }
 
+
+    //    save drawing to device storage
     fun saveBitmapToStorage(context: Context, bitmap: Bitmap, fileName: String): String? {
-        val directory = context.getExternalFilesDir("Drawings")
-        if (directory != null && !directory.exists()) {
+        val directory = context.getExternalFilesDir("Drawings") ?: return null
+        if (!directory.exists()) {
             directory.mkdirs()
         }
 
@@ -91,7 +127,7 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
 
         return try {
             outputStream = FileOutputStream(file)
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream) // 将 Bitmap 压缩为 PNG 并写入文件
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
             outputStream.flush()
 
             Log.d("SavePath", "Bitmap saved at: ${file.absolutePath}")
@@ -99,6 +135,7 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
             file.absolutePath
         } catch (e: IOException) {
             e.printStackTrace()
+            Log.e("SavePath", "Failed to save bitmap: ${e.localizedMessage}")
             null
         } finally {
             outputStream?.close()
@@ -106,12 +143,26 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
     }
 
 
-    fun loadDrawingFromDatabase(drawingId: Int): LiveData<DrawingData> {
-        return repository.getDrawing(drawingId)
+
+
+    fun loadDrawingFromDatabase(drawingId: Int): StateFlow<DrawingData?> {
+        val drawingDataFlow = MutableStateFlow<DrawingData?>(null)
+        viewModelScope.launch(Dispatchers.IO) {
+            repository.getDrawing(drawingId).collect { drawingData ->
+                drawingDataFlow.value = drawingData
+            }
+        }
+        return drawingDataFlow
     }
-    fun getLastSavedDrawingId(): LiveData<Int?> {
+
+    fun getLastSavedDrawingId(): Flow<Int?> {
         return repository.getLastSavedDrawingId()
     }
+    fun getAllDrawings(): LiveData<List<DrawingData>> {
+        return drawingDao.getAllDrawings()
+    }
+
+
 
 
 
