@@ -12,6 +12,7 @@ import android.view.MotionEvent
 import android.view.View
 
 class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) {
+    private var hasDrawn = false
     private val paths = mutableListOf<Pair<Path, Paint>>()
     private var bitmap: Bitmap? = null
 
@@ -55,6 +56,7 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
             }
             MotionEvent.ACTION_MOVE -> {
                 currentPath.lineTo(event.x, event.y)
+                hasDrawn = true
                 invalidate()
             }
             MotionEvent.ACTION_UP -> {
@@ -63,6 +65,9 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
             }
         }
         return true
+    }
+    fun hasDrawnAnything(): Boolean {
+        return hasDrawn
     }
 
     fun setBitmap(bitmap: Bitmap) {
@@ -106,10 +111,20 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
         canvas.drawPath(currentPath, currentPaint)
     }
 
-    fun getBitmap(): Bitmap? {
+    fun getBitmap(): Bitmap {
         val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
-        draw(canvas)
+
+        bitmap?.let {
+            canvas.drawBitmap(it, 0f, 0f, null)
+        }
+
+        for ((path, paint) in paths) {
+            canvas.drawPath(path, paint)
+        }
+
+        canvas.drawPath(currentPath, currentPaint)
+
         return bitmap
     }
 }

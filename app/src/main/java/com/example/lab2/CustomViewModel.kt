@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
@@ -81,10 +82,15 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
 
 
 
-    fun saveDrawingToDatabase(context: Context, bitmap: Bitmap, color: Int, brushSize: Float): Boolean {
+    fun saveDrawingToDatabase(
+        context: Context,
+        bitmap: Bitmap,
+        color: Int,
+        brushSize: Float,
+        onComplete: (Boolean) -> Unit
+    ) {
         val currentTime = System.currentTimeMillis()
         val fileName = "drawing_${currentTime}.png"
-        var isSaved = false
         viewModelScope.launch(Dispatchers.IO) {
             val filePath = saveBitmapToStorage(context, bitmap, fileName)
             if (filePath != null) {
@@ -95,13 +101,21 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
                     date = currentTime
                 )
                 repository.insert(drawing)
-                isSaved = true
+                Log.d("SaveDrawing", "Drawing saved successfully in the database")
+                withContext(Dispatchers.Main) {
+                    onComplete(true)
+                }
+            } else {
+                Log.e("SaveDrawing", "Failed to save the bitmap to storage")
+                withContext(Dispatchers.Main) {
+                    onComplete(false)
+                }
             }
         }
-        return isSaved
     }
 
-//    save drawing to device storage
+
+    //    save drawing to device storage
     fun saveBitmapToStorage(context: Context, bitmap: Bitmap, fileName: String): String? {
         val directory = context.getExternalFilesDir("Drawings") ?: return null
         if (!directory.exists()) {
@@ -121,6 +135,7 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
             file.absolutePath
         } catch (e: IOException) {
             e.printStackTrace()
+            Log.e("SavePath", "Failed to save bitmap: ${e.localizedMessage}")
             null
         } finally {
             outputStream?.close()

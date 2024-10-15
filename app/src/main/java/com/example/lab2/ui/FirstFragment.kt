@@ -1,6 +1,8 @@
 package com.example.lab2.ui
 
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,7 +19,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.lab2.CustomViewModel
-
+import java.io.File
 @Composable
 fun StartScreen(
     navController: NavController,
@@ -37,11 +39,21 @@ fun StartScreen(
             Text(text = "Create new canvas")
         }
 
-
         LazyColumn {
             items(drawings) { drawing ->
-                val thumbnailBitmap = remember(drawing.filePath) {
-                    BitmapFactory.decodeFile(drawing.filePath)
+                var isLoading by remember { mutableStateOf(true) }
+                var thumbnailBitmap by remember { mutableStateOf<Bitmap?>(null) }
+
+                LaunchedEffect(drawing.filePath) {
+                    isLoading = true
+                    val file = File(drawing.filePath)
+                    if (file.exists()) {
+                        thumbnailBitmap = BitmapFactory.decodeFile(file.path)
+
+                    } else {
+                        Log.e("StartScreen", "File does not exist: ${file.path}")
+                    }
+                    isLoading = false
                 }
 
                 Row(
@@ -50,15 +62,18 @@ fun StartScreen(
                         .padding(16.dp)
                         .clickable {
                             navController.navigate("canvas_screen/${drawing.id}")
-
                         }
                 ) {
-                    thumbnailBitmap?.let { bitmap ->
-                        androidx.compose.foundation.Image(
-                            bitmap = bitmap.asImageBitmap(),
-                            contentDescription = "Drawing Thumbnail",
-                            modifier = Modifier.size(100.dp)
-                        )
+                    if (isLoading) {
+                        Text(text = "Loading...", modifier = Modifier.size(100.dp))
+                    } else {
+                        thumbnailBitmap?.let { bitmap ->
+                            androidx.compose.foundation.Image(
+                                bitmap = bitmap.asImageBitmap(),
+                                contentDescription = "Drawing Thumbnail",
+                                modifier = Modifier.size(100.dp)
+                            )
+                        }
                     }
                     Column(modifier = Modifier.padding(start = 16.dp)) {
                         Text(text = "Drawing ID: ${drawing.id}")
@@ -69,4 +84,3 @@ fun StartScreen(
         }
     }
 }
-
