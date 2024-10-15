@@ -67,8 +67,8 @@ fun CanvasScreen(
             } else {
                 Log.d("CanvasScreen", "Bitmap successfully loaded")
             }
-            localColor = Color(it.color)
-            localBrushSize = it.brushSize
+//            localColor = Color(it.color)
+//            localBrushSize = it.brushSize
         }
     } else {
         localBitmap = Bitmap.createBitmap(800, 600, Bitmap.Config.ARGB_8888)
