@@ -35,6 +35,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -207,7 +211,10 @@ fun DrawingUI(
                 customView?.invalidate()
             },
             valueRange = 1f..50f,
-            modifier = Modifier.padding(horizontal = 16.dp)
+            modifier = Modifier
+                .padding(horizontal = 16.dp)
+                .semantics {
+                    stateDescription = "Brush Size Slider: ${currentBrushSize.toInt()}" }
         )
         Row(
             modifier = Modifier
@@ -215,22 +222,22 @@ fun DrawingUI(
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            ColorButton(color = Color.Blue) { selectedColor ->
+            ColorButton(color = Color.Blue, contentDescription = "Blue Color") { selectedColor ->
                 onColorChange(selectedColor)
                 customView?.setColor(selectedColor.toArgb())
                 customView?.invalidate()
             }
-            ColorButton(color = Color.Red) { selectedColor ->
+            ColorButton(color = Color.Red, contentDescription = "Red Color") { selectedColor ->
                 onColorChange(selectedColor)
                 customView?.setColor(selectedColor.toArgb())
                 customView?.invalidate()
             }
-            ColorButton(color = Color.Black) { selectedColor ->
+            ColorButton(color = Color.Black, contentDescription = "Black Color") { selectedColor ->
                 onColorChange(selectedColor)
                 customView?.setColor(selectedColor.toArgb())
                 customView?.invalidate()
             }
-            ColorButton(color = Color.White) { selectedColor ->
+            ColorButton(color = Color.White, contentDescription = "White Color") { selectedColor ->
                 onColorChange(selectedColor)
                 customView?.setColor(selectedColor.toArgb())
                 customView?.invalidate()
@@ -240,12 +247,13 @@ fun DrawingUI(
 }
 
 @Composable
-fun ColorButton(color: Color, onClick: (Color) -> Unit) {
+fun ColorButton(color: Color, contentDescription: String, onClick: (Color) -> Unit) {
     IconButton(onClick = { onClick(color) }, modifier = Modifier.size(50.dp)) {
         Box(
             modifier = Modifier
                 .size(50.dp)
                 .background(color)
+                .semantics { this.contentDescription = contentDescription }
         )
     }
 }
