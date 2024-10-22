@@ -1,14 +1,12 @@
 package com.example.lab2.ui
 
 
+import android.app.Activity
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-
-
 import android.util.Log
 import android.widget.Toast
-
-
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -38,20 +36,25 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
-import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.lab2.BrushShape
 import com.example.lab2.CustomView
 import com.example.lab2.CustomViewModel
+
 
 @Composable
 fun CanvasScreen(
     navController: NavController,
     drawingId: Int?,
-    viewModel: CustomViewModel = viewModel()
+    importedBitmap: Bitmap?,
+    viewModel: CustomViewModel = viewModel(),
+    onImportImageClick: () -> Unit
 ) {
     var localBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var localColor by remember { mutableStateOf(Color.Black) }
@@ -71,12 +74,14 @@ fun CanvasScreen(
             } else {
                 Log.d("CanvasScreen", "Bitmap successfully loaded")
             }
-//            localColor = Color(it.color)
-//            localBrushSize = it.brushSize
         }
+    } else if (importedBitmap != null) {
+        localBitmap = importedBitmap
+        Log.d("CanvasScreen", "Using imported bitmap")
     } else {
         localBitmap = Bitmap.createBitmap(800, 600, Bitmap.Config.ARGB_8888)
     }
+
     BackHandler(true) {
         if (customViewReference?.hasDrawnAnything() == true) {
             val finalBitmap = customViewReference?.getBitmap()
@@ -98,8 +103,6 @@ fun CanvasScreen(
             navController.popBackStack()
         }
     }
-
-
 
 
 
@@ -151,10 +154,25 @@ fun CanvasScreen(
                     localColor = newColor
                     customViewReference?.setColor(newColor.toArgb())
                     customViewReference?.invalidate()
+                },
+                onImportImageClick = onImportImageClick,
+                onSaveToGalleryClick = {
+                    customViewReference?.let {
+                        val bitmapToSave = it.getBitmap()
+                        viewModel.saveDrawingToGallery(navController.context, bitmapToSave) { success ->
+                            if (success) {
+                                Toast.makeText(navController.context, "Saved to Gallery", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(navController.context, "Failed to save to Gallery", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    }
                 }
-            )
-        }
 
+
+            )
+
+        }
     }
     LaunchedEffect(localColor, localBrushSize, brushShape) {
         customViewReference?.let {
@@ -175,8 +193,12 @@ fun DrawingUI(
     customView: CustomView?,
     onBrushShapeChange: (BrushShape) -> Unit,
     onBrushSizeChange: (Float) -> Unit,
-    onColorChange: (Color) -> Unit
+    onColorChange: (Color) -> Unit,
+    onImportImageClick: () -> Unit,
+    onSaveToGalleryClick: () -> Unit
+
 ) {
+
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -243,6 +265,16 @@ fun DrawingUI(
                 customView?.invalidate()
             }
         }
+
+        Button(onClick = onImportImageClick) {
+            Text(text = "Import Image")
+        }
+
+        Button(onClick = onSaveToGalleryClick) {
+            Text(text = "Save to Gallery")
+        }
+
+
     }
 }
 

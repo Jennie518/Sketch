@@ -23,7 +23,8 @@ import java.io.File
 @Composable
 fun StartScreen(
     navController: NavController,
-    viewModel: CustomViewModel = viewModel()
+    viewModel: CustomViewModel = viewModel(),
+    onImportImageClick: () -> Unit
 ) {
     val drawings by viewModel.getAllDrawings().observeAsState(listOf())
 
@@ -38,6 +39,10 @@ fun StartScreen(
         }) {
             Text(text = "Create new canvas")
         }
+        Button(onClick = onImportImageClick) {
+            Text("Import Image")
+        }
+
 
         LazyColumn {
             items(drawings) { drawing ->

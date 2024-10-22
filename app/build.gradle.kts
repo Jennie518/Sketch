@@ -53,6 +53,7 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview-android:1.7.3")
     implementation("androidx.compose.runtime:runtime-livedata:1.7.3")
     implementation("androidx.compose.ui:ui-test-junit4-android:1.7.3")
+    implementation("androidx.compose.ui:ui-test-android:1.7.4")
     val fragment_version = "1.8.4"
     val room_version = "2.6.1"
     // Java language implementation

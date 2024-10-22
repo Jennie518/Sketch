@@ -1,17 +1,24 @@
 package com.example.lab2
 
 import android.app.Application
+import android.content.ContentValues
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 
 import android.graphics.Paint
+import android.net.Uri
+import android.os.Environment
+import android.provider.MediaStore
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.toArgb
 
 import android.util.Log
+import androidx.core.content.FileProvider
 
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
@@ -29,11 +36,17 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 import java.io.IOException
+import java.io.OutputStream
+
+
 
 class CustomViewModel(application: Application) : AndroidViewModel(application){
+    private val _importedBitmap = MutableStateFlow<Bitmap?>(null)
+    val importedBitmap: StateFlow<Bitmap?> = _importedBitmap
 
     private val drawingDao: DrawingDao = DrawingDatabase.getDatabase(application).drawingDao()
     private val repository: DrawingRepository
+
 
     init {
         val drawingDao = DrawingDatabase.getDatabase(application).drawingDao()
@@ -52,34 +65,6 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
 
     //StateFlow to hold the paint brush data
     private val _brushShape = MutableStateFlow<Paint.Cap>(Paint.Cap.ROUND)
-    val brushShape: StateFlow<Paint.Cap> get() = _brushShape
-
-    // Save the drawing to StateFlow
-    fun saveDrawing(path: Path) {
-        _drawingPath.value = path
-    }
-
-    fun saveColor(color: Int) {
-        _colorPaint.value = color
-    }
-
-    fun saveBrushSize(size: Float) {
-        brushSize.value = size
-    }
-
-    // Update brush shape
-    fun setBrushShape(shape: Paint.Cap) {
-        _brushShape.value = shape
-    }
-    // Restore the previous drawing (if any)
-    fun getSavedDrawing(): StateFlow<Path?> {
-        return drawingPath
-    }
-
-    fun getSavedColor(): StateFlow<Int> {
-        return colorP
-    }
-
 
 
     fun saveDrawingToDatabase(
@@ -115,6 +100,7 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
     }
 
 
+
     //    save drawing to device storage
     fun saveBitmapToStorage(context: Context, bitmap: Bitmap, fileName: String): String? {
         val directory = context.getExternalFilesDir("Drawings") ?: return null
@@ -145,6 +131,8 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
 
 
 
+
+
     fun loadDrawingFromDatabase(drawingId: Int): StateFlow<DrawingData?> {
         val drawingDataFlow = MutableStateFlow<DrawingData?>(null)
         viewModelScope.launch(Dispatchers.IO) {
@@ -155,11 +143,97 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
         return drawingDataFlow
     }
 
+    fun shareDrawing(context: Context, bitmap: Bitmap) {
+        val fileName = "drawing_${System.currentTimeMillis()}.png"
+        val filePath = saveBitmapToStorage(context, bitmap, fileName)
+
+        filePath?.let {
+            val file = File(it)
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+            val shareIntent = Intent().apply {
+                action = Intent.ACTION_SEND
+                putExtra(Intent.EXTRA_STREAM, uri)
+                type = "image/*"
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            context.startActivity(Intent.createChooser(shareIntent, "Share drawing via"))
+        }
+    }
+
+
+    fun saveImportedBitmap(bitmap: Bitmap) {
+        _importedBitmap.value = bitmap
+    }
+    fun importImage(context: Context, uri: android.net.Uri, onSuccess: (Bitmap) -> Unit, onFailure: () -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val inputStream = context.contentResolver.openInputStream(uri)
+                val importedBitmap = BitmapFactory.decodeStream(inputStream)
+                inputStream?.close()
+                if (importedBitmap != null) {
+                    withContext(Dispatchers.Main) {
+                        onSuccess(importedBitmap)
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        onFailure()
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                withContext(Dispatchers.Main) {
+                    onFailure()
+                }
+            }
+        }
+    }
+
+
     fun getLastSavedDrawingId(): Flow<Int?> {
         return repository.getLastSavedDrawingId()
     }
     fun getAllDrawings(): LiveData<List<DrawingData>> {
         return drawingDao.getAllDrawings()
+    }
+    fun saveDrawingToGallery(context: Context, bitmap: Bitmap, onComplete: (Boolean) -> Unit) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val filename = "drawing_${System.currentTimeMillis()}.png"
+            val contentValues = ContentValues().apply {
+                put(MediaStore.Images.Media.DISPLAY_NAME, filename)
+                put(MediaStore.Images.Media.MIME_TYPE, "image/png")
+                put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/MyDrawings")
+            }
+
+            val resolver = context.contentResolver
+            val uri = resolver.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, contentValues)
+            if (uri != null) {
+                var outputStream: OutputStream? = null
+                try {
+                    outputStream = resolver.openOutputStream(uri)
+                    if (outputStream != null) {
+                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+                        withContext(Dispatchers.Main) {
+                            onComplete(true)
+                        }
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            onComplete(false)
+                        }
+                    }
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    withContext(Dispatchers.Main) {
+                        onComplete(false)
+                    }
+                } finally {
+                    outputStream?.close()
+                }
+            } else {
+                withContext(Dispatchers.Main) {
+                    onComplete(false)
+                }
+            }
+        }
     }
 
 
