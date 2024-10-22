@@ -81,6 +81,25 @@ fun CanvasScreen(
     } else {
         localBitmap = Bitmap.createBitmap(800, 600, Bitmap.Config.ARGB_8888)
     }
+//    if (drawingId != null) {
+//        Log.d("CanvasScreen", "Drawing ID: $drawingId")
+//        val drawingData by viewModel.loadDrawingFromDatabase(drawingId).collectAsState(initial = null)
+//
+//        drawingData?.let {
+//            Log.d("CanvasScreen", "Loading bitmap from file path: ${it.filePath}")
+//            localBitmap = BitmapFactory.decodeFile(it.filePath)
+//            if (localBitmap == null) {
+//                Log.e("CanvasScreen", "Failed to load bitmap from path: ${it.filePath}")
+//            } else {
+//                Log.d("CanvasScreen", "Bitmap successfully loaded")
+//            }
+//        }
+//    } else if (importedBitmap != null) {
+//        localBitmap = importedBitmap
+//        Log.d("CanvasScreen", "Using imported bitmap")
+//    } else {
+//        localBitmap = Bitmap.createBitmap(800, 600, Bitmap.Config.ARGB_8888)
+//    }
 
     BackHandler(true) {
         if (customViewReference?.hasDrawnAnything() == true) {
