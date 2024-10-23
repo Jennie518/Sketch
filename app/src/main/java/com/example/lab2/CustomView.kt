@@ -16,6 +16,9 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
     private val paths = mutableListOf<Pair<Path, Paint>>()
     private var bitmap: Bitmap? = null
 
+    // ball's trail
+    private val trail = mutableListOf<Pair<Float, Float>>()
+
     private var currentPath = Path()
     private var currentPaint = Paint()
 
@@ -23,6 +26,25 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
     private var nextColor: Int = Color.BLACK
     private var nextBrushSize: Float = 10f
     private var nextBrushShape: Paint.Cap = Paint.Cap.ROUND
+
+    // ball
+    private var ballX = 100f
+    private var ballY = 100f
+    private val ballRadius = 30f
+
+    private val ballPaint = Paint().apply {
+        color = Color.GREEN
+        style = Paint.Style.FILL
+    }
+
+    private val trailPaint = Paint().apply {
+        color = Color.GREEN
+        style =Paint.Style.FILL
+        isAntiAlias = true
+    }
+
+    private var velocityX = 0f
+    private var velocityY = 0f
 
     init {
         currentPaint.isAntiAlias = true
@@ -104,12 +126,21 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
             canvas.drawBitmap(it, 0f, 0f, null)
         }
 
+        // control the bounds
+        ballX = ballX.coerceIn(ballRadius, width - ballRadius)
+        ballY = ballY.coerceIn(ballRadius, height - ballRadius)
+
         for ((path, paint) in paths) {
             canvas.drawPath(path, paint)
             Log.d("CustomView", "Drawing path on canvas")
         }
 
+        for(point in trail){
+            canvas.drawCircle(point.first, point.second, 10f, trailPaint)
+        }
+
         canvas.drawPath(currentPath, currentPaint)
+        canvas.drawCircle(ballX, ballY, ballRadius, ballPaint)
     }
 
     fun getBitmap(): Bitmap {
@@ -127,5 +158,25 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
         canvas.drawPath(currentPath, currentPaint)
 
         return resultBitmap
+    }
+
+    fun updateBallPosition(accelX: Float, accelY: Float){
+        velocityX += accelX * 0.5f
+        velocityY +=accelY * 0.5f
+
+
+        velocityX *= 0.9f
+        velocityY *= 0.9f
+
+        ballX += velocityX
+        ballY += velocityY
+
+        // control bounds
+        ballX = ballX.coerceIn(ballRadius, width - ballRadius)
+        ballY = ballY.coerceIn(ballRadius, height - ballRadius)
+
+        trail.add(Pair(ballX, ballY))
+
+        invalidate()
     }
 }

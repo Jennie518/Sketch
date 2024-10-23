@@ -2,9 +2,14 @@ package com.example.lab2.ui
 
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.util.Log
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
@@ -22,6 +27,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -69,6 +75,10 @@ fun CanvasScreen(
 
     val context = LocalContext.current
 
+    // sensor
+    val sensorManager = remember { context.getSystemService(Context.SENSOR_SERVICE) as SensorManager }
+    val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+
     //Instance od ShakeDetector
     val shakeDetector = remember {
         ShakeDetector {
@@ -77,6 +87,31 @@ fun CanvasScreen(
             customViewReference?.setBrushSize(localBrushSize)
             customViewReference?.invalidate()
         }
+    }
+
+    val sensorEventListener = remember {
+        object : SensorEventListener{
+            override fun onSensorChanged(event: SensorEvent?) {
+                event?.let {
+                    val accelX = -it.values[0]
+                    val accelY = it.values[1]
+
+                    customViewReference?.updateBallPosition(accelX, accelY)
+                }
+            }
+
+            override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+            }
+        }
+    }
+
+    DisposableEffect(Unit) {
+
+        sensorManager.registerListener(sensorEventListener,accelerometer,SensorManager.SENSOR_DELAY_GAME)
+        onDispose {
+            sensorManager.unregisterListener(sensorEventListener)
+        }
+
     }
 
     LaunchedEffect(Unit) {
