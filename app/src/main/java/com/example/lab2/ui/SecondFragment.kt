@@ -46,6 +46,11 @@ import androidx.navigation.compose.rememberNavController
 import com.example.lab2.BrushShape
 import com.example.lab2.CustomView
 import com.example.lab2.CustomViewModel
+import com.example.lab2.ShakeDetector
+import androidx.compose.runtime.DisposableEffectScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.withContext
 
 
 @Composable
@@ -61,6 +66,25 @@ fun CanvasScreen(
     var localBrushSize by remember { mutableStateOf(10f) }
     var brushShape by remember { mutableStateOf(BrushShape.ROUND) }
     var customViewReference: CustomView? by remember { mutableStateOf(null) }
+
+    val context = LocalContext.current
+
+    //Instance od ShakeDetector
+    val shakeDetector = remember {
+        ShakeDetector {
+            // Increase brush size when shake is detected
+            localBrushSize = (localBrushSize + 5f).coerceAtMost(50f)
+            customViewReference?.setBrushSize(localBrushSize)
+            customViewReference?.invalidate()
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        Log.d("ShakeDetector", "LaunchedEffect started.")
+        shakeDetector.start(context)
+        awaitCancellation()  // This will keep the coroutine alive for shake detection
+        Log.d("ShakeDetector", "LaunchedEffect canceled.")
+    }
 
     if (drawingId != null) {
         Log.d("CanvasScreen", "Drawing ID: $drawingId")

@@ -93,6 +93,7 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
 
     fun setBrushSize(brushSize: Float) {
         nextBrushSize = brushSize
+        invalidate()
     }
 
     override fun onDraw(canvas: Canvas) {
