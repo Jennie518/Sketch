@@ -73,7 +73,7 @@ fun CanvasScreen(
     val shakeDetector = remember {
         ShakeDetector {
             // Increase brush size when shake is detected
-            localBrushSize = (localBrushSize + 5f).coerceAtMost(50f)
+            localBrushSize = (localBrushSize + 10f).coerceAtMost(50f)
             customViewReference?.setBrushSize(localBrushSize)
             customViewReference?.invalidate()
         }

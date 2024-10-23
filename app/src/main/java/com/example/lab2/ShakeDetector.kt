@@ -13,7 +13,7 @@ class ShakeDetector(private val onShake: () -> Unit) {
 
     private var sensorManager: SensorManager? = null
     private var accelerometer: Sensor? = null
-    private var shakeThreshold = 5f
+    private var shakeThreshold = 1.5f
     private var lastShakeTimestamp: Long = 0
     private var shakeTimeThreshold = 500L // 500 milliseconds between shakes
 
@@ -32,7 +32,7 @@ class ShakeDetector(private val onShake: () -> Unit) {
     private val sensorEventListener = object : SensorEventListener {
         override fun onSensorChanged(event: SensorEvent?) {
             event?.let {
-                Log.d("ShakeDetector", "Sensor event: X=${it.values[0]}, Y=${it.values[1]}, Z=${it.values[2]}")
+//                Log.d("ShakeDetector", "Sensor event: X=${it.values[0]}, Y=${it.values[1]}, Z=${it.values[2]}")
 
                 val x = event.values[0]
                 val y = event.values[1]
