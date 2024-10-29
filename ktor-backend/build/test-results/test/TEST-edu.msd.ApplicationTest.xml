@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="edu.msd.ApplicationTest" tests="7" skipped="0" failures="0" errors="0" timestamp="2024-10-28T19:18:34" hostname="Yijun-Zhan-MacBook-Pro.local" time="0.644">
+  <properties/>
+  <testcase name="testGetBooks" classname="edu.msd.ApplicationTest" time="0.565"/>
+  <testcase name="testRoot" classname="edu.msd.ApplicationTest" time="0.009"/>
+  <testcase name="testGetAllPosts" classname="edu.msd.ApplicationTest" time="0.021"/>
+  <testcase name="testGetPostsSince" classname="edu.msd.ApplicationTest" time="0.016"/>
+  <testcase name="testCreatePost" classname="edu.msd.ApplicationTest" time="0.008"/>
+  <testcase name="testDeletePost" classname="edu.msd.ApplicationTest" time="0.009"/>
+  <testcase name="testPostLikeBook" classname="edu.msd.ApplicationTest" time="0.016"/>
+  <system-out><![CDATA[2024-10-28 13:18:35.083 [Test worker] DEBUG Exposed - SELECT SETTING_VALUE FROM INFORMATION_SCHEMA.SETTINGS WHERE SETTING_NAME = 'MODE'
+2024-10-28 13:18:35.088 [Test worker] WARN  Exposed - Keyword identifier used: 'User'. Case sensitivity may not be kept when quoted by default: 'USER'. To keep case sensitivity, opt-in and set 'preserveKeywordCasing' to true in DatabaseConfig block.
+2024-10-28 13:18:35.090 [Test worker] WARN  Exposed - Keyword identifier used: 'timestamp'. Case sensitivity may not be kept when quoted by default: 'TIMESTAMP'. To keep case sensitivity, opt-in and set 'preserveKeywordCasing' to true in DatabaseConfig block.
+2024-10-28 13:18:35.097 [Test worker] DEBUG Exposed - CREATE TABLE IF NOT EXISTS "USER" (ID INT AUTO_INCREMENT PRIMARY KEY)
+2024-10-28 13:18:35.098 [Test worker] DEBUG Exposed - CREATE TABLE IF NOT EXISTS BOOK (ID INT AUTO_INCREMENT PRIMARY KEY, TITLE VARCHAR(100) NOT NULL)
+2024-10-28 13:18:35.099 [Test worker] DEBUG Exposed - ALTER TABLE BOOK ADD CONSTRAINT BOOK_TITLE_UNIQUE UNIQUE (TITLE)
+2024-10-28 13:18:35.102 [Test worker] DEBUG Exposed - CREATE TABLE IF NOT EXISTS LIKES (USER_ID INT, BOOK_ID INT, CONSTRAINT pk_Likes PRIMARY KEY (USER_ID, BOOK_ID), CONSTRAINT FK_LIKES_USER_ID__ID FOREIGN KEY (USER_ID) REFERENCES "USER"(ID) ON DELETE RESTRICT ON UPDATE RESTRICT, CONSTRAINT FK_LIKES_BOOK_ID__ID FOREIGN KEY (BOOK_ID) REFERENCES BOOK(ID) ON DELETE RESTRICT ON UPDATE RESTRICT)
+2024-10-28 13:18:35.102 [Test worker] DEBUG Exposed - CREATE TABLE IF NOT EXISTS POST (ID INT AUTO_INCREMENT PRIMARY KEY, CONTENT VARCHAR(255) NOT NULL, "TIMESTAMP" BIGINT NOT NULL)
+2024-10-28 13:18:35.126 [Test worker @coroutine#2] DEBUG Exposed - INSERT INTO BOOK (TITLE) VALUES ('Kotlin Programming')
+2024-10-28 13:18:35.126 [Test worker @coroutine#2] DEBUG Exposed - INSERT INTO BOOK (TITLE) VALUES ('Ktor in Action')
+2024-10-28 13:18:35.150 [Test worker @coroutine#1] TRACE i.ktor.client.plugins.HttpPlainText - Adding Accept-Charset=UTF-8 to http:///books
+2024-10-28 13:18:35.165 [DefaultDispatcher-worker-1 @call-context#3] INFO  ktor.test - No ktor.deployment.watch patterns specified, automatic reload is not active.
+2024-10-28 13:18:35.197 [DefaultDispatcher-worker-1 @call-context#3] INFO  ktor.test - Application started in 0.035 seconds.
+2024-10-28 13:18:35.216 [DefaultDispatcher-worker-1 @request#3] TRACE io.ktor.routing.Routing - Trace for [books]
+/, segment:0 -> SUCCESS @ /
+  /posts, segment:0 -> FAILURE "Selector didn't match" @ /posts
+  /books, segment:1 -> SUCCESS @ /books
+    /books/(method:GET), segment:1 -> SUCCESS @ /books/(method:GET)
+    /books/like, segment:1 -> FAILURE "Selector didn't match" @ /books/like
+  /json, segment:0 -> FAILURE "Selector didn't match" @ /json
+Matched routes:
+  "" -> "books" -> "(method:GET)"
+Route resolve result:
+  SUCCESS @ /books/(method:GET)
+2024-10-28 13:18:35.221 [DefaultDispatcher-worker-1 @coroutine#7] DEBUG Exposed - SELECT BOOK.TITLE FROM BOOK
+2024-10-28 13:18:35.263 [Test worker @coroutine#1] TRACE i.k.client.plugins.HttpCallValidator - Validating response for request http://localhost/books
+2024-10-28 13:18:35.263 [Test worker @coroutine#1] TRACE i.k.c.p.DefaultResponseValidation - Skipping default response validation for http://localhost/books
+2024-10-28 13:18:35.271 [Test worker @coroutine#1] TRACE i.k.c.plugins.defaultTransformers - Transformed with default transformers response body for http://localhost/books to class io.ktor.utils.io.core.ByteReadPacket
+2024-10-28 13:18:35.272 [Test worker @coroutine#1] TRACE i.k.c.plugins.defaultTransformers - Transformed with default transformers response body for http://localhost/books to class io.ktor.utils.io.core.ByteReadPacket
+2024-10-28 13:18:35.276 [Test worker @coroutine#10] TRACE i.ktor.client.plugins.HttpPlainText - Adding Accept-Charset=UTF-8 to http:///
+2024-10-28 13:18:35.277 [DefaultDispatcher-worker-3 @call-context#11] INFO  ktor.test - No ktor.deployment.watch patterns specified, automatic reload is not active.
+2024-10-28 13:18:35.277 [DefaultDispatcher-worker-3 @call-context#11] INFO  ktor.test - Application started in 0.001 seconds.
+2024-10-28 13:18:35.278 [DefaultDispatcher-worker-3 @request#11] TRACE io.ktor.routing.Routing - Trace for []
+/, segment:0 -> SUCCESS @ /
+  /, segment:0 -> SUCCESS @ /
+    /(method:GET), segment:0 -> SUCCESS @ /(method:GET)
+  /goodbye, segment:0 -> FAILURE "Selector didn't match" @ /goodbye
+  /msd, segment:0 -> FAILURE "Selector didn't match" @ /msd
+Matched routes:
+  "" -> "<slash>" -> "(method:GET)"
+Route resolve result:
+  SUCCESS @ /(method:GET)
+2024-10-28 13:18:35.280 [Test worker @coroutine#10] TRACE i.k.client.plugins.HttpCallValidator - Validating response for request http://localhost/
+2024-10-28 13:18:35.280 [Test worker @coroutine#10] TRACE i.k.c.p.DefaultResponseValidation - Skipping default response validation for http://localhost/
+2024-10-28 13:18:35.281 [Test worker @coroutine#10] TRACE i.k.c.plugins.defaultTransformers - Transformed with default transformers response body for http://localhost/ to class io.ktor.utils.io.core.ByteReadPacket
+2024-10-28 13:18:35.283 [Test worker @coroutine#17] TRACE i.ktor.client.plugins.HttpPlainText - Adding Accept-Charset=UTF-8 to http:///posts
+2024-10-28 13:18:35.283 [Test worker @coroutine#17] TRACE i.ktor.client.plugins.HttpPlainText - Sending request body to http:///posts as text/plain with charset UTF-8
+2024-10-28 13:18:35.283 [Test worker @coroutine#17] TRACE i.k.c.plugins.defaultTransformers - Transformed with default transformers request body for http:///posts from class io.ktor.http.content.TextContent
+2024-10-28 13:18:35.285 [DefaultDispatcher-worker-3 @call-context#18] INFO  ktor.test - No ktor.deployment.watch patterns specified, automatic reload is not active.
+2024-10-28 13:18:35.286 [DefaultDispatcher-worker-3 @call-context#18] INFO  ktor.test - Application started in 0.002 seconds.
+2024-10-28 13:18:35.287 [DefaultDispatcher-worker-3 @request#18] TRACE io.ktor.routing.Routing - Trace for [posts]
+/, segment:0 -> SUCCESS @ /
+  /posts, segment:1 -> SUCCESS @ /posts
+    /posts/(method:POST), segment:1 -> SUCCESS @ /posts/(method:POST)
+    /posts/(method:GET), segment:1 -> FAILURE "Selector didn't match" @ /posts/(method:GET)
+    /posts/since, segment:1 -> FAILURE "Selector didn't match" @ /posts/since
+    /posts/{id}, segment:1 -> FAILURE "Selector didn't match" @ /posts/{id}
+  /books, segment:0 -> FAILURE "Selector didn't match" @ /books
+Matched routes:
+  "" -> "posts" -> "(method:POST)"
+Route resolve result:
+  SUCCESS @ /posts/(method:POST)
+2024-10-28 13:18:35.292 [DefaultDispatcher-worker-3 @request#18] TRACE i.k.server.engine.DefaultTransform - No Default Transformations found for class io.ktor.utils.io.ByteBufferChannel and expected type TypeInfo(type=class io.ktor.utils.io.ByteReadChannel, reifiedType=interface io.ktor.utils.io.ByteReadChannel, kotlinType=io.ktor.utils.io.ByteReadChannel) for call /posts
+2024-10-28 13:18:35.294 [DefaultDispatcher-worker-3 @request#18] DEBUG Exposed - INSERT INTO POST (CONTENT, "TIMESTAMP") VALUES ('Test post content', 1730143115293)
+2024-10-28 13:18:35.296 [Test worker @coroutine#17] TRACE i.k.client.plugins.HttpCallValidator - Validating response for request http://localhost/posts
+2024-10-28 13:18:35.296 [Test worker @coroutine#17] TRACE i.k.c.p.DefaultResponseValidation - Skipping default response validation for http://localhost/posts
+2024-10-28 13:18:35.297 [Test worker @coroutine#17] TRACE i.ktor.client.plugins.HttpPlainText - Adding Accept-Charset=UTF-8 to http:///posts
+2024-10-28 13:18:35.298 [DefaultDispatcher-worker-1 @request#24] TRACE io.ktor.routing.Routing - Trace for [posts]
+/, segment:0 -> SUCCESS @ /
+  /posts, segment:1 -> SUCCESS @ /posts
+    /posts/(method:POST), segment:1 -> FAILURE "Selector didn't match" @ /posts/(method:POST)
+    /posts/(method:GET), segment:1 -> SUCCESS @ /posts/(method:GET)
+    /posts/since, segment:1 -> FAILURE "Selector didn't match" @ /posts/since
+    /posts/{id}, segment:1 -> FAILURE "Selector didn't match" @ /posts/{id}
+  /books, segment:0 -> FAILURE "Selector didn't match" @ /books
+Matched routes:
+  "" -> "posts" -> "(method:GET)"
+Route resolve result:
+  SUCCESS @ /posts/(method:GET)
+2024-10-28 13:18:35.299 [DefaultDispatcher-worker-1 @request#25] DEBUG Exposed - SELECT POST.ID, POST.CONTENT, POST."TIMESTAMP" FROM POST
+2024-10-28 13:18:35.303 [Test worker @coroutine#17] TRACE i.k.client.plugins.HttpCallValidator - Validating response for request http://localhost/posts
+2024-10-28 13:18:35.303 [Test worker @coroutine#17] TRACE i.k.c.p.DefaultResponseValidation - Skipping default response validation for http://localhost/posts
+2024-10-28 13:18:35.303 [Test worker @coroutine#17] TRACE i.k.c.plugins.defaultTransformers - Transformed with default transformers response body for http://localhost/posts to class io.ktor.utils.io.core.ByteReadPacket
+2024-10-28 13:18:35.306 [Test worker @coroutine#29] DEBUG Exposed - INSERT INTO POST (CONTENT, "TIMESTAMP") VALUES ('Test post content', 1634554805000)
+2024-10-28 13:18:35.308 [Test worker @coroutine#28] TRACE i.ktor.client.plugins.HttpPlainText - Adding Accept-Charset=UTF-8 to http:///posts/since?since=1634554800000
+2024-10-28 13:18:35.309 [DefaultDispatcher-worker-5 @call-context#30] INFO  ktor.test - No ktor.deployment.watch patterns specified, automatic reload is not active.
+2024-10-28 13:18:35.310 [DefaultDispatcher-worker-5 @call-context#30] INFO  ktor.test - Application started in 0.001 seconds.
+2024-10-28 13:18:35.311 [DefaultDispatcher-worker-5 @request#30] TRACE io.ktor.routing.Routing - Trace for [posts, since]
+/, segment:0 -> SUCCESS @ /
+  /, segment:0 -> SUCCESS @ /
+    /(method:GET), segment:0 -> FAILURE "Not all segments matched" @ /(method:GET)
+  /goodbye, segment:0 -> FAILURE "Selector didn't match" @ /goodbye
+  /msd, segment:0 -> FAILURE "Selector didn't match" @ /msd
+  /posts, segment:1 -> SUCCESS @ /posts
+    /posts/(method:POST), segment:1 -> FAILURE "Selector didn't match" @ /posts/(method:POST)
+    /posts/(method:GET), segment:1 -> FAILURE "Not all segments matched" @ /posts/(method:GET)
+    /posts/since, segment:2 -> SUCCESS @ /posts/since
+      /posts/since/[since], segment:2 -> SUCCESS; Parameters [since=[1634554800000]] @ /posts/since/[since]
+        /posts/since/[since]/(method:GET), segment:2 -> SUCCESS @ /posts/since/[since]/(method:GET)
+    /posts/{id}, segment:1 -> FAILURE "Better match was already found" @ /posts/{id}
+  /books, segment:0 -> FAILURE "Selector didn't match" @ /books
+Matched routes:
+  "" -> "posts" -> "since" -> "[since]" -> "(method:GET)"
+Route resolve result:
+  SUCCESS; Parameters [since=[1634554800000]] @ /posts/since/[since]/(method:GET)
+2024-10-28 13:18:35.317 [DefaultDispatcher-worker-5 @request#34] DEBUG Exposed - SELECT POST.ID, POST.CONTENT, POST."TIMESTAMP" FROM POST WHERE POST."TIMESTAMP" >= 1634554800000
+2024-10-28 13:18:35.319 [Test worker @coroutine#28] TRACE i.k.client.plugins.HttpCallValidator - Validating response for request http://localhost/posts/since?since=1634554800000
+2024-10-28 13:18:35.319 [Test worker @coroutine#28] TRACE i.k.c.p.DefaultResponseValidation - Skipping default response validation for http://localhost/posts/since?since=1634554800000
+2024-10-28 13:18:35.319 [Test worker @coroutine#28] TRACE i.k.c.plugins.defaultTransformers - Transformed with default transformers response body for http://localhost/posts/since?since=1634554800000 to class io.ktor.utils.io.core.ByteReadPacket
+ID: 1, Content: Test post content, Timestamp: 1730143115293
+ID: 2, Content: Test post content, Timestamp: 1634554805000
+2024-10-28 13:18:35.321 [Test worker @coroutine#37] TRACE i.ktor.client.plugins.HttpPlainText - Adding Accept-Charset=UTF-8 to http:///posts
+2024-10-28 13:18:35.321 [Test worker @coroutine#37] TRACE i.ktor.client.plugins.HttpPlainText - Sending request body to http:///posts as text/plain with charset UTF-8
+2024-10-28 13:18:35.321 [Test worker @coroutine#37] TRACE i.k.c.plugins.defaultTransformers - Transformed with default transformers request body for http:///posts from class io.ktor.http.content.TextContent
+2024-10-28 13:18:35.322 [DefaultDispatcher-worker-1 @call-context#38] INFO  ktor.test - No ktor.deployment.watch patterns specified, automatic reload is not active.
+2024-10-28 13:18:35.322 [DefaultDispatcher-worker-1 @call-context#38] INFO  ktor.test - Application started in 0.001 seconds.
+2024-10-28 13:18:35.323 [DefaultDispatcher-worker-1 @request#38] TRACE io.ktor.routing.Routing - Trace for [posts]
+/, segment:0 -> SUCCESS @ /
+  /posts, segment:1 -> SUCCESS @ /posts
+    /posts/(method:POST), segment:1 -> SUCCESS @ /posts/(method:POST)
+    /posts/(method:GET), segment:1 -> FAILURE "Selector didn't match" @ /posts/(method:GET)
+    /posts/since, segment:1 -> FAILURE "Selector didn't match" @ /posts/since
+    /posts/{id}, segment:1 -> FAILURE "Selector didn't match" @ /posts/{id}
+  /books, segment:0 -> FAILURE "Selector didn't match" @ /books
+Matched routes:
+  "" -> "posts" -> "(method:POST)"
+Route resolve result:
+  SUCCESS @ /posts/(method:POST)
+2024-10-28 13:18:35.323 [DefaultDispatcher-worker-1 @request#38] TRACE i.k.server.engine.DefaultTransform - No Default Transformations found for class io.ktor.utils.io.ByteBufferChannel and expected type TypeInfo(type=class io.ktor.utils.io.ByteReadChannel, reifiedType=interface io.ktor.utils.io.ByteReadChannel, kotlinType=io.ktor.utils.io.ByteReadChannel) for call /posts
+2024-10-28 13:18:35.325 [DefaultDispatcher-worker-1 @request#38] DEBUG Exposed - INSERT INTO POST (CONTENT, "TIMESTAMP") VALUES ('This is a test post', 1730143115323)
+2024-10-28 13:18:35.326 [Test worker @coroutine#37] TRACE i.k.client.plugins.HttpCallValidator - Validating response for request http://localhost/posts
+2024-10-28 13:18:35.326 [Test worker @coroutine#37] TRACE i.k.c.p.DefaultResponseValidation - Skipping default response validation for http://localhost/posts
+2024-10-28 13:18:35.327 [Test worker @coroutine#37] TRACE i.k.c.plugins.defaultTransformers - Transformed with default transformers response body for http://localhost/posts to class io.ktor.utils.io.core.ByteReadPacket
+2024-10-28 13:18:35.330 [Test worker @coroutine#45] DEBUG Exposed - INSERT INTO POST (CONTENT, "TIMESTAMP") VALUES ('This is a test post', 1730143115329)
+2024-10-28 13:18:35.330 [Test worker @coroutine#44] TRACE i.ktor.client.plugins.HttpPlainText - Adding Accept-Charset=UTF-8 to http:///posts/4
+2024-10-28 13:18:35.331 [DefaultDispatcher-worker-5 @call-context#46] INFO  ktor.test - No ktor.deployment.watch patterns specified, automatic reload is not active.
+2024-10-28 13:18:35.331 [DefaultDispatcher-worker-5 @call-context#46] INFO  ktor.test - Application started in 0.0 seconds.
+2024-10-28 13:18:35.332 [DefaultDispatcher-worker-5 @request#46] TRACE io.ktor.routing.Routing - Trace for [posts, 4]
+/, segment:0 -> SUCCESS @ /
+  /posts, segment:1 -> SUCCESS @ /posts
+    /posts/(method:POST), segment:1 -> FAILURE "Selector didn't match" @ /posts/(method:POST)
+    /posts/(method:GET), segment:1 -> FAILURE "Selector didn't match" @ /posts/(method:GET)
+    /posts/since, segment:1 -> FAILURE "Selector didn't match" @ /posts/since
+    /posts/{id}, segment:2 -> SUCCESS; Parameters [id=[4]] @ /posts/{id}
+      /posts/{id}/(method:GET), segment:2 -> FAILURE "Selector didn't match" @ /posts/{id}/(method:GET)
+      /posts/{id}/(method:DELETE), segment:2 -> SUCCESS @ /posts/{id}/(method:DELETE)
+  /books, segment:0 -> FAILURE "Selector didn't match" @ /books
+Matched routes:
+  "" -> "posts" -> "{id}" -> "(method:DELETE)"
+Route resolve result:
+  SUCCESS; Parameters [id=[4]] @ /posts/{id}/(method:DELETE)
+2024-10-28 13:18:35.334 [DefaultDispatcher-worker-5 @request#50] DEBUG Exposed - DELETE FROM POST WHERE POST.ID = 4
+2024-10-28 13:18:35.335 [Test worker @coroutine#44] TRACE i.k.client.plugins.HttpCallValidator - Validating response for request http://localhost/posts/4
+2024-10-28 13:18:35.335 [Test worker @coroutine#44] TRACE i.k.c.p.DefaultResponseValidation - Skipping default response validation for http://localhost/posts/4
+2024-10-28 13:18:35.336 [Test worker @coroutine#44] TRACE i.k.c.plugins.defaultTransformers - Transformed with default transformers response body for http://localhost/posts/4 to class io.ktor.utils.io.core.ByteReadPacket
+2024-10-28 13:18:35.338 [Test worker @coroutine#54] DEBUG Exposed - INSERT INTO BOOK (TITLE) VALUES ('Likeable Book')
+2024-10-28 13:18:35.339 [Test worker @coroutine#55] DEBUG Exposed - INSERT INTO "USER"  DEFAULT VALUES
+2024-10-28 13:18:35.340 [Test worker @coroutine#53] TRACE i.ktor.client.plugins.HttpPlainText - Adding Accept-Charset=UTF-8 to http:///books/like?userID=1
+2024-10-28 13:18:35.340 [Test worker @coroutine#53] TRACE i.k.c.plugins.defaultTransformers - Transformed with default transformers request body for http:///books/like?userID=1 from class kotlin.String
+2024-10-28 13:18:35.341 [DefaultDispatcher-worker-2 @call-context#56] INFO  ktor.test - No ktor.deployment.watch patterns specified, automatic reload is not active.
+2024-10-28 13:18:35.342 [DefaultDispatcher-worker-2 @call-context#56] INFO  ktor.test - Application started in 0.001 seconds.
+2024-10-28 13:18:35.342 [DefaultDispatcher-worker-2 @request#56] TRACE io.ktor.routing.Routing - Trace for [books, like]
+/, segment:0 -> SUCCESS @ /
+  /posts, segment:0 -> FAILURE "Selector didn't match" @ /posts
+  /books, segment:1 -> SUCCESS @ /books
+    /books/(method:GET), segment:1 -> FAILURE "Selector didn't match" @ /books/(method:GET)
+    /books/like, segment:2 -> SUCCESS @ /books/like
+      /books/like/[title?], segment:2 -> SUCCESS @ /books/like/[title?]
+        /books/like/[title?]/(method:POST), segment:2 -> SUCCESS @ /books/like/[title?]/(method:POST)
+  /json, segment:0 -> FAILURE "Selector didn't match" @ /json
+Matched routes:
+  "" -> "books" -> "like" -> "[title?]" -> "(method:POST)"
+Route resolve result:
+  SUCCESS @ /books/like/[title?]/(method:POST)
+2024-10-28 13:18:35.345 [DefaultDispatcher-worker-2 @request#56] TRACE i.k.server.engine.DefaultTransform - No Default Transformations found for class io.ktor.utils.io.ByteBufferChannel and expected type TypeInfo(type=class edu.msd.BookPostData, reifiedType=class edu.msd.BookPostData, kotlinType=edu.msd.BookPostData) for call /books/like?userID=1
+2024-10-28 13:18:35.350 [DefaultDispatcher-worker-2 @coroutine#60] DEBUG Exposed - SELECT BOOK.ID, BOOK.TITLE FROM BOOK WHERE BOOK.TITLE = 'Likeable Book'
+2024-10-28 13:18:35.350 [DefaultDispatcher-worker-2 @coroutine#60] DEBUG Exposed - INSERT IGNORE INTO LIKES (BOOK_ID, USER_ID) VALUES (3, 1)
+2024-10-28 13:18:35.351 [DefaultDispatcher-worker-2 @request#56] TRACE i.k.s.p.c.ContentNegotiation - Skipping because body is already converted.
+2024-10-28 13:18:35.351 [Test worker @coroutine#53] TRACE i.k.client.plugins.HttpCallValidator - Validating response for request http://localhost/books/like?userID=1
+2024-10-28 13:18:35.352 [Test worker @coroutine#53] TRACE i.k.c.p.DefaultResponseValidation - Skipping default response validation for http://localhost/books/like?userID=1
+2024-10-28 13:18:35.352 [Test worker @coroutine#53] TRACE i.k.c.plugins.defaultTransformers - Transformed with default transformers response body for http://localhost/books/like?userID=1 to class io.ktor.utils.io.core.ByteReadPacket
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

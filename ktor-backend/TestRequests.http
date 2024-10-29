@@ -1,0 +1,47 @@
+### Create a post
+POST http://localhost:8080/posts
+Content-Type: text/plain
+
+This is a test post
+
+###
+
+### Get all posts
+GET http://localhost:8080/posts
+
+###
+
+### Get posts since a specific timestamp
+# Replace "1634554800000" with the desired timestamp value.
+GET http://localhost:8080/posts/since?since=1634554800000
+
+
+
+
+### Get a post by ID
+# Replace "{id}" with an actual post ID after creating posts
+GET http://localhost:8080/posts/1
+###
+### Delete a post by ID
+# Replace "{id}" with an actual post ID to delete
+DELETE http://localhost:8080/posts/1
+
+###
+
+### List all books
+GET http://localhost:8080/books
+
+###
+
+### Like a book
+# Note: Include `userID` as a query parameter and provide a `title` in the JSON body
+POST http://localhost:8080/books/like?userID=1
+Content-Type: application/json
+{
+  "title": "Dune 3"
+}
+
+###
+
+### Get liked books
+GET http://localhost:8080/books/liked
