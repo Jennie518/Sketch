@@ -27,6 +27,7 @@ import com.example.lab2.data.DrawingDao
 import com.example.lab2.data.DrawingData
 import com.example.lab2.data.DrawingDatabase
 import com.example.lab2.data.DrawingRepository
+import com.example.lab2.network.RetrofitInstance
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,6 +39,13 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStream
 
+
+import okhttp3.MediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 
 
 class CustomViewModel(application: Application) : AndroidViewModel(application){
@@ -194,6 +202,30 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
     }
     fun getAllDrawings(): LiveData<List<DrawingData>> {
         return drawingDao.getAllDrawings()
+    }
+
+    fun uploadDrawingToServer(file: File, color: Int, brushSize: Float, userId: String) {
+        val fileReqBody = file.asRequestBody("image/png".toMediaTypeOrNull())
+        val filePart = MultipartBody.Part.createFormData("file", file.name, fileReqBody)
+
+        val colorReqBody = color.toString().toRequestBody("text/plain".toMediaTypeOrNull())
+        val brushSizeReqBody = brushSize.toString().toRequestBody("text/plain".toMediaTypeOrNull())
+        val userIdReqBody = userId.toRequestBody("text/plain".toMediaTypeOrNull())
+
+        viewModelScope.launch {
+            try {
+                val response = RetrofitInstance.api.uploadDrawing(filePart, colorReqBody, brushSizeReqBody, userIdReqBody)
+                if (response.isSuccessful) {
+                    Log.d("UploadDrawing", "File uploaded successfully")
+                } else {
+
+                    Log.e("UploadDrawing", "Failed to upload file. Error code: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Log.e("UploadDrawing", "Exception occurred during upload: ${e.localizedMessage}")
+            }
+        }
     }
     fun saveDrawingToGallery(context: Context, bitmap: Bitmap, onComplete: (Boolean) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {

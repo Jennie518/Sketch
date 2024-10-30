@@ -57,7 +57,13 @@ import androidx.compose.runtime.DisposableEffectScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
 
+import com.google.firebase.auth.FirebaseAuth
+
+val firebaseUser = FirebaseAuth.getInstance().currentUser
+val userId = firebaseUser?.uid ?: "default_user_id"
 
 @Composable
 fun CanvasScreen(
@@ -140,25 +146,6 @@ fun CanvasScreen(
     } else {
         localBitmap = Bitmap.createBitmap(800, 600, Bitmap.Config.ARGB_8888)
     }
-//    if (drawingId != null) {
-//        Log.d("CanvasScreen", "Drawing ID: $drawingId")
-//        val drawingData by viewModel.loadDrawingFromDatabase(drawingId).collectAsState(initial = null)
-//
-//        drawingData?.let {
-//            Log.d("CanvasScreen", "Loading bitmap from file path: ${it.filePath}")
-//            localBitmap = BitmapFactory.decodeFile(it.filePath)
-//            if (localBitmap == null) {
-//                Log.e("CanvasScreen", "Failed to load bitmap from path: ${it.filePath}")
-//            } else {
-//                Log.d("CanvasScreen", "Bitmap successfully loaded")
-//            }
-//        }
-//    } else if (importedBitmap != null) {
-//        localBitmap = importedBitmap
-//        Log.d("CanvasScreen", "Using imported bitmap")
-//    } else {
-//        localBitmap = Bitmap.createBitmap(800, 600, Bitmap.Config.ARGB_8888)
-//    }
 
     BackHandler(true) {
         if (customViewReference?.hasDrawnAnything() == true) {
@@ -245,7 +232,25 @@ fun CanvasScreen(
                             }
                         }
                     }
+                },
+                onUploadDrawingClick = {
+                    customViewReference?.let {
+                        val bitmap = it.getBitmap()
+                        val file = File(context.cacheDir, "drawing.png")
+                        val outputStream = FileOutputStream(file)
+                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+                        outputStream.flush()
+                        outputStream.close()
+
+                        val color = localColor.toArgb()
+                        val brushSize = localBrushSize
+                        val firebaseUser = FirebaseAuth.getInstance().currentUser
+                        val userId = firebaseUser?.uid ?: "default_user_id"
+
+                        viewModel.uploadDrawingToServer(file, color, brushSize, userId)
+                    }
                 }
+
 
 
             )
@@ -274,6 +279,7 @@ fun DrawingUI(
     onColorChange: (Color) -> Unit,
     onImportImageClick: () -> Unit,
     onSaveToGalleryClick: () -> Unit
+    onUploadDrawingClick: () -> Unit
 
 ) {
 
@@ -350,6 +356,10 @@ fun DrawingUI(
 
         Button(onClick = onSaveToGalleryClick) {
             Text(text = "Save to Gallery")
+        }
+
+        Button(onClick = onUploadDrawingClick) {
+            Text(text = "Upload Drawing")
         }
 
 

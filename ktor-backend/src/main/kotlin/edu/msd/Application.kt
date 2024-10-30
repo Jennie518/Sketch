@@ -1,7 +1,6 @@
 //package edu.msd
 
 import edu.msd.DrawingsTable
-import edu.msd.configureResources
 import edu.msd.plugins.*
 
 import io.ktor.server.application.*
@@ -31,11 +30,10 @@ fun main() {
 
 fun Application.module() {
     DBSettings.init()
-    configureSecurity()
+//    configureSecurity()
     configureHTTP()
-    configureMonitoring()
+//    configureMonitoring()
     configureSerialization()
-    configureRouting()
-    configureResources()
+//    configureRouting()
 }
 

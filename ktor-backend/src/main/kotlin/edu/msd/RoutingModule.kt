@@ -8,6 +8,7 @@ import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
 
@@ -55,6 +56,65 @@ fun Application.routingModule() {
             } else {
                 call.respond(HttpStatusCode.BadRequest, message = "Missing required fields")
             }
+        }
+        delete("/drawings/{id}") {
+            val id = call.parameters["id"]?.toIntOrNull()
+            if (id == null) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid or missing ID")
+                return@delete
+            }
+
+            val deletedCount = transaction {
+                DrawingsTable.deleteWhere { DrawingsTable.id eq id }
+            }
+
+            if (deletedCount > 0) {
+                call.respond(HttpStatusCode.OK, "Drawing deleted successfully")
+            } else {
+                call.respond(HttpStatusCode.NotFound, "Drawing not found")
+            }
+        }
+        get("/drawings/{id}") {
+            val id = call.parameters["id"]?.toIntOrNull()
+            if (id == null) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid or missing ID")
+                return@get
+            }
+
+            val drawing = transaction {
+                DrawingsTable.select { DrawingsTable.id eq id }
+                    .map {
+                        mapOf(
+                            "id" to it[DrawingsTable.id].value,
+                            "filePath" to it[DrawingsTable.filePath],
+                            "color" to it[DrawingsTable.color],
+                            "brushSize" to it[DrawingsTable.brushSize],
+                            "date" to it[DrawingsTable.date]
+                        )
+                    }
+                    .singleOrNull()
+            }
+
+            if (drawing != null) {
+                call.respond(drawing)
+            } else {
+                call.respond(HttpStatusCode.NotFound, "Drawing not found")
+            }
+        }
+
+        get("/drawings") {
+            val drawings = transaction {
+                DrawingsTable.selectAll().map {
+                    mapOf(
+                        "id" to it[DrawingsTable.id].value,
+                        "filePath" to it[DrawingsTable.filePath],
+                        "color" to it[DrawingsTable.color],
+                        "brushSize" to it[DrawingsTable.brushSize],
+                        "date" to it[DrawingsTable.date]
+                    )
+                }
+            }
+            call.respond(drawings)
         }
     }
 }

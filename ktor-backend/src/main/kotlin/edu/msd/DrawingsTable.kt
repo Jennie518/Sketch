@@ -1,6 +1,6 @@
 package edu.msd
 
-import org.jetbrains.exposed.sql.Table
+
 import org.jetbrains.exposed.dao.id.IntIdTable
 
 object DrawingsTable : IntIdTable() {

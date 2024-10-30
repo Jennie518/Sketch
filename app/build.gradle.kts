@@ -65,6 +65,10 @@ dependencies {
     implementation("androidx.room:room-ktx:$room_version")
     ksp("androidx.room:room-compiler:$room_version")
 
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:okhttp:4.9.0")
+
 
     implementation("androidx.core:core-ktx:1.13.1")
     implementation("androidx.appcompat:appcompat:1.7.0")
@@ -88,4 +92,7 @@ dependencies {
     val nav_version = "2.8.2"
     //noinspection GradleDependency
     implementation("androidx.navigation:navigation-compose:$nav_version")
+
+    implementation("com.google.firebase:firebase-auth:21.0.3")
+
 }
