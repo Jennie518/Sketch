@@ -8,4 +8,5 @@ object DrawingsTable : IntIdTable() {
     val color = integer("color")
     val brushSize = float("brushSize")
     val date = long("date")
+    val userId = varchar("userId", 50)
 }
