@@ -62,8 +62,8 @@ import java.io.FileOutputStream
 
 import com.google.firebase.auth.FirebaseAuth
 
-//val firebaseUser = FirebaseAuth.getInstance().currentUser
-//val userId = firebaseUser?.uid ?: "default_user_id"
+val firebaseUser = FirebaseAuth.getInstance().currentUser
+val userId = firebaseUser?.uid ?: "default_user_id"
 
 @Composable
 fun CanvasScreen(
@@ -328,8 +328,7 @@ fun DrawingUI(
             modifier = Modifier
                 .padding(horizontal = 16.dp)
                 .semantics {
-                    stateDescription = "Brush Size Slider: ${currentBrushSize.toInt()}"
-                }
+                    stateDescription = "Brush Size Slider: ${currentBrushSize.toInt()}" }
         )
         Row(
             modifier = Modifier
@@ -367,9 +366,9 @@ fun DrawingUI(
             Text(text = "Save to Gallery")
         }
 
-//        Button(onClick = onUploadDrawingClick) {
-//            Text(text = "Upload Drawing")
-//        }
+        Button(onClick = onUploadDrawingClick) {
+            Text(text = "Upload Drawing")
+        }
 
 
     }

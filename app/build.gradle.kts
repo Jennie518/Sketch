@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -54,6 +55,7 @@ dependencies {
     implementation("androidx.compose.runtime:runtime-livedata:1.7.3")
     implementation("androidx.compose.ui:ui-test-junit4-android:1.7.3")
     implementation("androidx.compose.ui:ui-test-android:1.7.4")
+    implementation("com.google.firebase:firebase-auth-ktx:23.1.0")
     val fragment_version = "1.8.4"
     val room_version = "2.6.1"
     // Java language implementation
@@ -93,6 +95,8 @@ dependencies {
     //noinspection GradleDependency
     implementation("androidx.navigation:navigation-compose:$nav_version")
 
-    implementation("com.google.firebase:firebase-auth:21.0.3")
+    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
+    implementation("com.google.firebase:firebase-analytics")
+
 
 }
