@@ -12,3 +12,8 @@ object RetrofitInstance {
             .create(ApiService::class.java)
     }
 }
+
+data class UploadResponse(
+    val message: String,
+    val drawingId: Int
+)

@@ -11,7 +11,7 @@ import androidx.room.RoomDatabase
 import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
 
-@Database(entities = [DrawingData::class], version = 1, exportSchema = false)
+@Database(entities = [DrawingData::class], version = 3, exportSchema = false)
 abstract class DrawingDatabase : RoomDatabase() {
     abstract fun drawingDao(): DrawingDao
 
@@ -54,4 +54,10 @@ interface DrawingDao {
 
     @Query("SELECT id FROM drawings ORDER BY date DESC LIMIT 1")
     fun getLastDrawingAsFlow(): Flow<Int?>
+
+    @Query("UPDATE drawings SET isShared = :isShared WHERE id = :drawingId")
+    suspend fun updateDrawingSharedStatus(drawingId: Int, isShared: Boolean)
+
+    @Query("UPDATE drawings SET serverDrawingId = :serverDrawingId WHERE id = :drawingId")
+    suspend fun updateDrawingServerId(drawingId: Int, serverDrawingId: Int)
 }

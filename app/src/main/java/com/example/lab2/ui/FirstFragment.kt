@@ -3,7 +3,6 @@ package com.example.lab2.ui
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.util.Log
-import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,7 +18,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.lab2.CustomViewModel
+
 import java.io.File
+
 @Composable
 fun StartScreen(
     navController: NavController,
@@ -33,7 +34,6 @@ fun StartScreen(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Top
     ) {
-
         Button(onClick = {
             navController.navigate("canvas_screen")
         }) {
@@ -42,7 +42,6 @@ fun StartScreen(
         Button(onClick = onImportImageClick) {
             Text("Import Image")
         }
-
 
         LazyColumn {
             items(drawings) { drawing ->
@@ -54,12 +53,12 @@ fun StartScreen(
                     val file = File(drawing.filePath)
                     if (file.exists()) {
                         thumbnailBitmap = BitmapFactory.decodeFile(file.path)
-
                     } else {
                         Log.e("StartScreen", "File does not exist: ${file.path}")
                     }
                     isLoading = false
                 }
+
 
                 Row(
                     modifier = Modifier
@@ -83,6 +82,27 @@ fun StartScreen(
                     Column(modifier = Modifier.padding(start = 16.dp)) {
                         Text(text = "Drawing ID: ${drawing.id}")
                         Text(text = "Date: ${drawing.date}")
+                        Button(
+                            onClick = {
+                                if (drawing.isShared) {
+                                    viewModel.unshareDrawingFromServer(drawing.id)
+                                    viewModel.updateDrawingSharedStatus(drawing.id, false)
+                                } else {
+                                    viewModel.uploadDrawingToServer(
+                                        File(drawing.filePath),
+                                        drawing.color,
+                                        drawing.brushSize,
+                                        "default_user_id",
+                                        drawing.id
+                                    ) { serverDrawingId ->
+                                        viewModel.updateDrawingSharedStatus(drawing.id, true)
+                                        viewModel.updateDrawingServerId(drawing.id, serverDrawingId)
+                                    }
+                                }
+                            }
+                        ) {
+                            Text(text = if (drawing.isShared) "Unshare" else "Share")
+                        }
                     }
                 }
             }

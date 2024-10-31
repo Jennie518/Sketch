@@ -13,6 +13,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 
 import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.transactions.transaction
 import java.io.File
 
@@ -44,60 +45,140 @@ fun Application.module() {
 //    configureRouting()
     log.info("Ktor application started successfully with uploadDrawing route.")
     routing {
-            get("/hello") {
-                call.respondText("Hello World!", ContentType.Text.Plain)
-            }
-            post("/uploadDrawing") {
-                val multipart = call.receiveMultipart()
-                var filePath: String? = null
-                var color: Int? = null
-                var brushSize: Float? = null
-                var userId: String? = null
+        post("/uploadDrawing") {
+            val multipart = call.receiveMultipart()
+            var filePath: String? = null
+            var color: Int? = null
+            var brushSize: Float? = null
+            var userId: String? = null
 
-                try {
-                    multipart.forEachPart { part ->
-                        when (part) {
-                            is PartData.FormItem -> {
-                                when (part.name) {
-                                    "color" -> color = part.value.toIntOrNull()
-                                    "brushSize" -> brushSize = part.value.toFloatOrNull()
-                                    "userId" -> userId = part.value
-                                }
+            try {
+                multipart.forEachPart { part ->
+                    when (part) {
+                        is PartData.FormItem -> {
+                            when (part.name) {
+                                "color" -> color = part.value.toIntOrNull()
+                                "brushSize" -> brushSize = part.value.toFloatOrNull()
+                                "userId" -> userId = part.value
                             }
-                            is PartData.FileItem -> {
-                                val originalFileName = part.originalFileName ?: return@forEachPart
-                                val uploadsDir = File("uploads")
-                                if (!uploadsDir.exists()) {
-                                    uploadsDir.mkdirs()
-                                }
-                                val file = File(uploadsDir, originalFileName)
-                                part.streamProvider().use { input ->
-                                    file.outputStream().buffered().use { output -> input.copyTo(output) }
-                                }
-                                filePath = file.absolutePath
-                            }
-                            else -> {}
                         }
-                        part.dispose()
+                        is PartData.FileItem -> {
+                            val originalFileName = part.originalFileName ?: return@forEachPart
+                            // Store in /uploads on the server
+                            val uploadsDir = File("uploads")
+                            if (!uploadsDir.exists()) {
+                                uploadsDir.mkdirs()
+                            }
+                            val file = File(uploadsDir, originalFileName)
+                            part.streamProvider().use { input ->
+                                file.outputStream().buffered().use { output -> input.copyTo(output) }
+                            }
+                            filePath = file.absolutePath
+                        }
+                        else -> {}
                     }
-                } catch (e: Exception) {
-                    call.respond(HttpStatusCode.InternalServerError, "Server error occurred while processing the request")
-                    return@post
+                    part.dispose()
+                }
+            } catch (e: Exception) {
+                call.respond(HttpStatusCode.InternalServerError, "Server error occurred while processing the request")
+                return@post
+            }
+
+            if (filePath != null && color != null && brushSize != null && userId != null) {
+                val drawingId = transaction {
+                    DrawingsTable.insert {
+                        it[DrawingsTable.filePath] = filePath!!
+                        it[DrawingsTable.color] = color!!
+                        it[DrawingsTable.brushSize] = brushSize!!
+                        it[DrawingsTable.date] = System.currentTimeMillis()
+                        it[DrawingsTable.userId] = userId!!
+                    } get DrawingsTable.id
                 }
 
-                if (filePath != null && color != null && brushSize != null && userId != null) {
-                    transaction {
-                        DrawingsTable.insert {
-                            it[DrawingsTable.filePath] = filePath!!
-                            it[DrawingsTable.color] = color!!
-                            it[DrawingsTable.brushSize] = brushSize!!
-                            it[DrawingsTable.date] = System.currentTimeMillis()
-                            it[DrawingsTable.userId] = userId!!
-                        }
+                call.respond(HttpStatusCode.OK, mapOf("message" to "File uploaded successfully", "drawingId" to drawingId))
+            } else {
+                call.respond(HttpStatusCode.BadRequest, message = "Missing required fields")
+            }
+        }
+//            post("/uploadDrawing") {
+//                val multipart = call.receiveMultipart()
+//                var filePath: String? = null
+//                var color: Int? = null
+//                var brushSize: Float? = null
+//                var userId: String? = null
+//
+//                try {
+//                    multipart.forEachPart { part ->
+//                        when (part) {
+//                            is PartData.FormItem -> {
+//                                when (part.name) {
+//                                    "color" -> color = part.value.toIntOrNull()
+//                                    "brushSize" -> brushSize = part.value.toFloatOrNull()
+//                                    "userId" -> userId = part.value
+//                                }
+//                            }
+//                            is PartData.FileItem -> {
+//                                val originalFileName = part.originalFileName ?: return@forEachPart
+////                                store in /uploads in the server
+//                                val uploadsDir = File("uploads")
+//                                if (!uploadsDir.exists()) {
+//                                    uploadsDir.mkdirs()
+//                                }
+//                                val file = File(uploadsDir, originalFileName)
+//                                part.streamProvider().use { input ->
+//                                    file.outputStream().buffered().use { output -> input.copyTo(output) }
+//                                }
+//                                filePath = file.absolutePath
+//                            }
+//                            else -> {}
+//                        }
+//                        part.dispose()
+//                    }
+//                } catch (e: Exception) {
+//                    call.respond(HttpStatusCode.InternalServerError, "Server error occurred while processing the request")
+//                    return@post
+//                }
+//
+//                if (filePath != null && color != null && brushSize != null && userId != null) {
+//                    val drawingId = transaction {
+//                        DrawingsTable.insert {
+//                            it[DrawingsTable.filePath] = filePath!!
+//                            it[DrawingsTable.color] = color!!
+//                            it[DrawingsTable.brushSize] = brushSize!!
+//                            it[DrawingsTable.date] = System.currentTimeMillis()
+//                            it[DrawingsTable.userId] = userId!!
+//                        }
+//                    }
+//                    call.respond(HttpStatusCode.OK, message = "File uploaded successfully with ID: $drawingId")
+//                } else {
+//                    call.respond(HttpStatusCode.BadRequest, message = "Missing required fields")
+//                }
+//            }
+//        unShared logic
+            delete("/drawings/{id}") {
+                val userId = call.request.headers["userId"]
+                val id = call.parameters["id"]?.toIntOrNull()
+
+                if (userId == null) {
+                    call.respond(HttpStatusCode.Unauthorized, "User not authenticated")
+                    return@delete
+                }
+
+                if (id == null) {
+                    call.respond(HttpStatusCode.BadRequest, "Invalid or missing ID")
+                    return@delete
+                }
+
+                val deletedCount = transaction {
+                    DrawingsTable.deleteWhere {
+                        (DrawingsTable.id eq id) and (DrawingsTable.userId eq userId) // 只能删除当前用户的绘图
                     }
-                    call.respond(HttpStatusCode.OK, message = "File uploaded successfully")
+                }
+
+                if (deletedCount > 0) {
+                    call.respond(HttpStatusCode.OK, "Drawing deleted successfully")
                 } else {
-                    call.respond(HttpStatusCode.BadRequest, message = "Missing required fields")
+                    call.respond(HttpStatusCode.NotFound, "Drawing not found or unauthorized")
                 }
             }
     }
