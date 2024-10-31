@@ -33,6 +33,7 @@ fun StartScreen(
 
     var showDialog by remember { mutableStateOf(false) }
     var drawingIdInput by remember { mutableStateOf("") }
+    val context = LocalContext.current
 
     Column(
         modifier = Modifier.fillMaxSize(),
@@ -68,6 +69,11 @@ fun StartScreen(
                         val drawingId = drawingIdInput.toIntOrNull()
                         if (drawingId != null) {
                             // send the ID to the server
+                            viewModel.fetchDrawingFromServer(drawingId, onSuccess = { drawing ->
+                                navController.navigate("canvas_screen/${drawing.id}")
+                            }, onFailure = {
+                                Toast.makeText(context, "Drawing not found", Toast.LENGTH_SHORT).show()
+                            })
 
                         } else {
                             Log.e("StartScreen", "Invalid ID")
@@ -122,14 +128,18 @@ fun StartScreen(
                             )
                         }
                     }
+
                     Column(modifier = Modifier.padding(start = 16.dp)) {
                         Text(text = "Drawing ID: ${drawing.id}")
+                        Text(text = "Server Drawing ID: ${drawing.serverDrawingId ?: "Not shared"}")
                         Text(text = "Date: ${drawing.date}")
+                        val buttonText = if (drawing.isShared) "Unshare" else "Share"
                         Button(
                             onClick = {
                                 if (drawing.isShared) {
-                                    viewModel.unshareDrawingFromServer(drawing.id)
+                                    viewModel.unshareDrawingFromServer(drawing.serverDrawingId ?: return@Button)
                                     viewModel.updateDrawingSharedStatus(drawing.id, false)
+                                    viewModel.updateDrawingServerId(drawing.id, null)
                                 } else {
                                     viewModel.uploadDrawingToServer(
                                         File(drawing.filePath),
@@ -144,8 +154,9 @@ fun StartScreen(
                                 }
                             }
                         ) {
-                            Text(text = if (drawing.isShared) "Unshare" else "Share")
+                            Text(text = buttonText)
                         }
+
                     }
                 }
             }

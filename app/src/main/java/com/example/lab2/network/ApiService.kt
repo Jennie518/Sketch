@@ -1,5 +1,6 @@
 package com.example.lab2.network
 
+import com.example.lab2.data.DrawingData
 import okhttp3.MultipartBody
 import okhttp3.RequestBody
 import retrofit2.http.Multipart
@@ -8,6 +9,7 @@ import retrofit2.http.Part
 import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.DELETE
+import retrofit2.http.GET
 import retrofit2.http.Path
 
 interface ApiService {
@@ -24,4 +26,8 @@ interface ApiService {
     suspend fun deleteDrawing(
         @Path("id") drawingId: Int
     ): Response<ResponseBody>
+
+    @GET("/drawings/{id}")
+    suspend fun getDrawingById(@Path("id") drawingId: Int): Response<DrawingData>
+
 }

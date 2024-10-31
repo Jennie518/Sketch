@@ -60,4 +60,11 @@ interface DrawingDao {
 
     @Query("UPDATE drawings SET serverDrawingId = :serverDrawingId WHERE id = :drawingId")
     suspend fun updateDrawingServerId(drawingId: Int, serverDrawingId: Int)
+
+    @Query("SELECT * FROM drawings WHERE id = :drawingId")
+    fun getDrawingById(drawingId: Int): LiveData<DrawingData?>
+
+    @Query("SELECT * FROM drawings WHERE id = :drawingId")
+    fun getDrawingByIdSync(drawingId: Int): DrawingData?
+
 }
