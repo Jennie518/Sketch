@@ -28,7 +28,7 @@ class DrawingRepository(private val coroutineScope: CoroutineScope) {
     private val db = FirebaseFirestore.getInstance()
     private val storage = FirebaseStorage.getInstance()
 
-    fun insert(drawing: DrawingData) {
+    fun insert(drawing: DrawingData, onComplete: (String) -> Unit) {
 
         db.collection("drawings")
             .add(drawing)
@@ -43,13 +43,10 @@ class DrawingRepository(private val coroutineScope: CoroutineScope) {
                     "firestore",
                     "insert a drawing to firestore db successfully"
                 )
+                onComplete(generatedId)
             }
             .addOnFailureListener { Log.d("firestore", "fail to insert drawing to firestore") }
     }
-
-//    suspend fun insertDrawings(drawings: List<DrawingData>) {
-//        drawingDao.insertDrawings(drawings)
-//    }
 
     suspend fun update(drawing: DrawingData) {
         try {
@@ -62,10 +59,6 @@ class DrawingRepository(private val coroutineScope: CoroutineScope) {
             Log.e("firestore", "fail to update drawing to firestore")
         }
     }
-
-//    fun getLastSavedDrawingId(): Flow<Int?> {
-//        return drawingDao.getLastDrawingAsFlow()
-//    }
 
     suspend fun getDrawing(id: String): DrawingData? {
         return try {
@@ -140,19 +133,25 @@ class DrawingRepository(private val coroutineScope: CoroutineScope) {
     }
 
     fun updateDrawingServerId(drawingId: String, serverDrawingId: Int) {
-        db.collection("drawings").document(drawingId)
+        db.collection("drawings")
+            .document(drawingId)
             .update("serverDrawingId", serverDrawingId)
-            .addOnSuccessListener { Log.d("firestore", "DrawingServerID saved!") }
-            .addOnFailureListener { e -> Log.e("firestore", "fail update server ID", e) }
+            .addOnSuccessListener { Log.e("DrawingServerId", "DrawingServerID saved!") }
+            .addOnFailureListener { e ->
+                Log.e(
+                    "DrawingServerId",
+                    "fail update server ID ${e.printStackTrace()}"
+                )
+            }
     }
 
-    fun unshareDrawingFromServer(drawingId: Int, onUnsharedSucess: () -> Unit) {
+    fun unshareDrawingFromServer(drawingId: String, onUnsharedSucess: () -> Unit) {
         coroutineScope.launch(Dispatchers.IO) {
             try {
                 val response = RetrofitInstance.api.deleteDrawing(drawingId)
                 if (response.isSuccessful) {
                     Log.d("UnshareDrawing", "File unshared successfully")
-                    updateDrawingSharedStatus(drawingId.toString(), false)
+                    updateDrawingSharedStatus(drawingId, false)
 
                     onUnsharedSucess()
                 } else {
@@ -168,10 +167,10 @@ class DrawingRepository(private val coroutineScope: CoroutineScope) {
         }
     }
 
-    fun loadDrawingFromDatabase(drawingId: Int): StateFlow<DrawingData?> {
+    fun loadDrawingFromDatabase(drawingId: String): StateFlow<DrawingData?> {
         val drawingDataFlow = MutableStateFlow<DrawingData?>(null)
         CoroutineScope(Dispatchers.IO).launch {
-            val drawingData = getDrawing(drawingId.toString())
+            val drawingData = getDrawing(drawingId)
             drawingDataFlow.value = drawingData
         }
         return drawingDataFlow

@@ -105,7 +105,11 @@ fun StartScreen(
                     isLoading = true
                     val file = File(drawing.filePath)
                     if (file.exists()) {
-                        thumbnailBitmap = BitmapFactory.decodeFile(file.path)
+                        try {
+                        thumbnailBitmap = BitmapFactory.decodeFile(file.path)}
+                        catch (e:Exception){
+                            Log.e("decode","Fail to load bitmap: ${e.message}")
+                        }
 
                     } else {
                         Log.e("StartScreen", "File does not exist: ${file.path}")
@@ -139,8 +143,8 @@ fun StartScreen(
                         Button(
                             onClick = {
                                 if (drawing.isShared) {
-                                    viewModel.repository.unshareDrawingFromServer(drawing.id.toInt()) {
-                                        viewModel.repository.updateDrawingSharedStatus(
+                                    viewModel.unshareDrawingFromServer(drawing.id) {
+                                        viewModel.updateDrawingSharedStatus(
                                             drawing.id,
                                             false
                                         )
@@ -151,13 +155,13 @@ fun StartScreen(
                                         drawing.color,
                                         drawing.brushSize,
                                         "default_user_id",
-                                        drawing.id.toInt()
+                                        drawing.id
                                     ) { serverDrawingId ->
-                                        viewModel.repository.updateDrawingSharedStatus(
+                                        viewModel.updateDrawingSharedStatus(
                                             drawing.id,
                                             true
                                         )
-                                        viewModel.repository.updateDrawingServerId(
+                                        viewModel.updateDrawingServerId(
                                             drawing.id,
                                             serverDrawingId
                                         )

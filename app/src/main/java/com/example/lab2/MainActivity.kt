@@ -90,7 +90,7 @@ fun ComposeNavigation(
             )
         }
         composable("canvas_screen/{drawingId}") { backStackEntry ->
-            val drawingId = backStackEntry.arguments?.getString("drawingId")?.toInt()
+            val drawingId = backStackEntry.arguments?.getString("drawingId")
             CanvasScreen(
                 navController = navController,
                 drawingId = drawingId,

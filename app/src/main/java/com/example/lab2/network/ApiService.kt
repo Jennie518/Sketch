@@ -22,6 +22,6 @@ interface ApiService {
 
     @DELETE("drawings/{id}")
     suspend fun deleteDrawing(
-        @Path("id") drawingId: Int
+        @Path("id") drawingId: String
     ): Response<ResponseBody>
 }

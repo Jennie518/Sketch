@@ -61,6 +61,7 @@ import java.io.File
 import java.io.FileOutputStream
 
 import com.google.firebase.auth.FirebaseAuth
+import java.util.UUID
 
 val firebaseUser = FirebaseAuth.getInstance().currentUser
 val userId = firebaseUser?.uid ?: "default_user_id"
@@ -68,7 +69,7 @@ val userId = firebaseUser?.uid ?: "default_user_id"
 @Composable
 fun CanvasScreen(
     navController: NavController,
-    drawingId: Int?,
+    drawingId: String?,
     importedBitmap: Bitmap?,
     viewModel: CustomViewModel = viewModel(),
     onImportImageClick: () -> Unit
@@ -82,7 +83,8 @@ fun CanvasScreen(
     val context = LocalContext.current
 
     // sensor
-    val sensorManager = remember { context.getSystemService(Context.SENSOR_SERVICE) as SensorManager }
+    val sensorManager =
+        remember { context.getSystemService(Context.SENSOR_SERVICE) as SensorManager }
     val accelerometer = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
 
     //Instance od ShakeDetector
@@ -96,7 +98,7 @@ fun CanvasScreen(
     }
 
     val sensorEventListener = remember {
-        object : SensorEventListener{
+        object : SensorEventListener {
             override fun onSensorChanged(event: SensorEvent?) {
                 event?.let {
                     val accelX = -it.values[0]
@@ -113,7 +115,11 @@ fun CanvasScreen(
 
     DisposableEffect(Unit) {
 
-        sensorManager.registerListener(sensorEventListener,accelerometer,SensorManager.SENSOR_DELAY_GAME)
+        sensorManager.registerListener(
+            sensorEventListener,
+            accelerometer,
+            SensorManager.SENSOR_DELAY_GAME
+        )
         onDispose {
             sensorManager.unregisterListener(sensorEventListener)
         }
@@ -124,12 +130,12 @@ fun CanvasScreen(
         Log.d("ShakeDetector", "LaunchedEffect started.")
         shakeDetector.start(context)
         awaitCancellation()  // This will keep the coroutine alive for shake detection
-        Log.d("ShakeDetector", "LaunchedEffect canceled.")
     }
 
     if (drawingId != null) {
         Log.d("CanvasScreen", "Drawing ID: $drawingId")
-        val drawingData by viewModel.repository.loadDrawingFromDatabase(drawingId).collectAsState(initial = null)
+        val drawingData by viewModel.loadDrawingFromDatabase(drawingId)
+            .collectAsState(initial = null)
 
         drawingData?.let {
             Log.d("CanvasScreen", "Loading bitmap from file path: ${it.filePath}")
@@ -150,17 +156,52 @@ fun CanvasScreen(
     BackHandler(true) {
         if (customViewReference?.hasDrawnAnything() == true) {
             val finalBitmap = customViewReference?.getBitmap()
-            finalBitmap?.let {
+            finalBitmap?.let { bitmap ->
+
+
+
                 viewModel.saveDrawingToDatabase(
                     navController.context,
-                    it,
+                    bitmap,
                     localColor.toArgb(),
-                    localBrushSize
-                ) { success ->
-                    if (success) {
+                    localBrushSize,
+
+                ) { success, dID ->
+                    if (success && dID.isNotEmpty()) {
+                        val file = File(context.cacheDir, "drawing.png")
+                        val outputStream = FileOutputStream(file)
+                        finalBitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+                        outputStream.flush()
+                        outputStream.close()
+
+//                        val localDrawingId = drawingId ?: ""
+//                        Log.e("localDrawingId","localDrawingId: ${drawingId}")
+                        Log.e("localDrawingId", "dID: ${dID}")
+
+                        viewModel.uploadDrawingToServer(
+                            file,
+                            localColor.toArgb(),
+                            localBrushSize,
+                            "default_user_id",
+                            dID,
+                        ) { serverDrawingId ->
+
+                            viewModel.updateDrawingSharedStatus(
+                                dID,
+                                true
+                            )
+                            viewModel.updateDrawingServerId(
+                                dID,
+                                serverDrawingId
+                            )
+                        }
                         navController.popBackStack()
                     } else {
-                        Toast.makeText(navController.context, "Failed to save drawing", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            navController.context,
+                            "Failed to save drawing",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
             }
@@ -224,43 +265,26 @@ fun CanvasScreen(
                 onSaveToGalleryClick = {
                     customViewReference?.let {
                         val bitmapToSave = it.getBitmap()
-                        viewModel.saveDrawingToGallery(navController.context, bitmapToSave) { success ->
+                        viewModel.saveDrawingToGallery(
+                            navController.context,
+                            bitmapToSave
+                        ) { success ->
                             if (success) {
-                                Toast.makeText(navController.context, "Saved to Gallery", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    navController.context,
+                                    "Saved to Gallery",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             } else {
-                                Toast.makeText(navController.context, "Failed to save to Gallery", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    navController.context,
+                                    "Failed to save to Gallery",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
-                        }
-                    }
-                },
-                onUploadDrawingClick = {
-                    customViewReference?.let {
-                        val bitmap = it.getBitmap()
-                        val file = File(context.cacheDir, "drawing.png")
-                        val outputStream = FileOutputStream(file)
-                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-                        outputStream.flush()
-                        outputStream.close()
-
-                        val color = localColor.toArgb()
-                        val brushSize = localBrushSize
-
-                        val localDrawingId = drawingId ?: -1
-
-                        if (localDrawingId != -1) {
-                            viewModel.uploadDrawingToServer(file, color, brushSize, "default_user_id", localDrawingId) { serverDrawingId ->
-
-                                viewModel.repository.updateDrawingSharedStatus(localDrawingId.toString(), true)
-                                viewModel.repository.updateDrawingServerId(localDrawingId.toString(), serverDrawingId)
-                            }
-                        } else {
-                            Toast.makeText(context, "Invalid drawing ID", Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
-
-
-
             )
 
         }
@@ -286,9 +310,7 @@ fun DrawingUI(
     onBrushSizeChange: (Float) -> Unit,
     onColorChange: (Color) -> Unit,
     onImportImageClick: () -> Unit,
-    onSaveToGalleryClick: () -> Unit,
-    onUploadDrawingClick: () -> Unit
-
+    onSaveToGalleryClick: () -> Unit
 ) {
 
     Column(
@@ -328,7 +350,8 @@ fun DrawingUI(
             modifier = Modifier
                 .padding(horizontal = 16.dp)
                 .semantics {
-                    stateDescription = "Brush Size Slider: ${currentBrushSize.toInt()}" }
+                    stateDescription = "Brush Size Slider: ${currentBrushSize.toInt()}"
+                }
         )
         Row(
             modifier = Modifier
@@ -336,7 +359,10 @@ fun DrawingUI(
                 .padding(16.dp),
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            ColorButton(color = Color.Blue, contentDescription = "Blue Color") { selectedColor ->
+            ColorButton(
+                color = Color.Blue,
+                contentDescription = "Blue Color"
+            ) { selectedColor ->
                 onColorChange(selectedColor)
                 customView?.setColor(selectedColor.toArgb())
                 customView?.invalidate()
@@ -346,12 +372,18 @@ fun DrawingUI(
                 customView?.setColor(selectedColor.toArgb())
                 customView?.invalidate()
             }
-            ColorButton(color = Color.Black, contentDescription = "Black Color") { selectedColor ->
+            ColorButton(
+                color = Color.Black,
+                contentDescription = "Black Color"
+            ) { selectedColor ->
                 onColorChange(selectedColor)
                 customView?.setColor(selectedColor.toArgb())
                 customView?.invalidate()
             }
-            ColorButton(color = Color.White, contentDescription = "White Color") { selectedColor ->
+            ColorButton(
+                color = Color.White,
+                contentDescription = "White Color"
+            ) { selectedColor ->
                 onColorChange(selectedColor)
                 customView?.setColor(selectedColor.toArgb())
                 customView?.invalidate()
@@ -365,12 +397,6 @@ fun DrawingUI(
         Button(onClick = onSaveToGalleryClick) {
             Text(text = "Save to Gallery")
         }
-
-        Button(onClick = onUploadDrawingClick) {
-            Text(text = "Upload Drawing")
-        }
-
-
     }
 }
 

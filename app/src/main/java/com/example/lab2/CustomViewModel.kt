@@ -51,7 +51,7 @@ class CustomViewModel(application: Application) : AndroidViewModel(application) 
     private val _importedBitmap = MutableStateFlow<Bitmap?>(null)
     val importedBitmap: StateFlow<Bitmap?> = _importedBitmap
 
-    val repository =  DrawingRepository(viewModelScope)
+    private val repository =  DrawingRepository(viewModelScope)
 
     // Change from livedata to stateflow
     // StateFlow to hold the drawing path
@@ -70,7 +70,7 @@ class CustomViewModel(application: Application) : AndroidViewModel(application) 
         bitmap: Bitmap,
         color: Int,
         brushSize: Float,
-        onComplete: (Boolean) -> Unit
+        onComplete: (Boolean, String) -> Unit
     ) {
         viewModelScope.launch(Dispatchers.IO) {
             val currentTime = System.currentTimeMillis()
@@ -85,50 +85,26 @@ class CustomViewModel(application: Application) : AndroidViewModel(application) 
                             brushSize = brushSize,
                             date = currentTime
                         )
-                        repository.insert(drawing)
+                        repository.insert(drawing){ dID ->
+                            Log.d("localDrawingId", "From saveDrawingToDatabase: ${dID}")
+                            onComplete(true, dID)
+
+                        }
                         Log.d("storage", "Drawing saved successfully in the firestore db")
+                    }else{
+                        onComplete(false,"")
                     }
                 }
-                withContext(Dispatchers.Main) { onComplete(true) }
             } else {
                 Log.e("storage", "Failed to save the bitmap to storage")
                 withContext(Dispatchers.Main) {
-                    onComplete(false)
+                    onComplete(false, "")
                 }
             }
         }
     }
 
-
-    //    save drawing to device storage
-//    fun saveBitmapToStorage(context: Context, bitmap: Bitmap, fileName: String): String? {
-//        val directory = context.getExternalFilesDir("Drawings") ?: return null
-//        if (!directory.exists()) {
-//            directory.mkdirs()
-//        }
-//
-//        val file = File(directory, fileName)
-//        var outputStream: FileOutputStream? = null
-//
-//        return try {
-//            outputStream = FileOutputStream(file)
-//            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-//            outputStream.flush()
-//
-//            Log.d("SavePath", "Bitmap saved at: ${file.absolutePath}")
-//
-//            file.absolutePath
-//        } catch (e: IOException) {
-//            e.printStackTrace()
-//            Log.e("SavePath", "Failed to save bitmap: ${e.localizedMessage}")
-//            null
-//        } finally {
-//            outputStream?.close()
-//        }
-//    }
-
-
-    fun loadDrawingFromDatabase(drawingId: Int): StateFlow<DrawingData?> {
+    fun loadDrawingFromDatabase(drawingId: String): StateFlow<DrawingData?> {
         return repository.loadDrawingFromDatabase(drawingId)
     }
 
@@ -200,7 +176,7 @@ class CustomViewModel(application: Application) : AndroidViewModel(application) 
         color: Int,
         brushSize: Float,
         userId: String,
-        drawingId: Int,
+        drawingId: String,
         onSuccess: (Int) -> Unit
     ) {
         val fileReqBody = file.asRequestBody("image/png".toMediaTypeOrNull())
@@ -220,13 +196,14 @@ class CustomViewModel(application: Application) : AndroidViewModel(application) 
                     userIdReqBody
                 )
                 if (response.isSuccessful) {
-                    Log.d("UploadDrawing", "File uploaded successfully")
+                    Log.e("UploadDrawing", "File uploaded successfully")
 
                     val serverDrawingId = response.body()?.drawingId ?: -1
+                    Log.e("generatedServerID", "generatedServerID: $serverDrawingId")
 
                     if (serverDrawingId != -1) {
-                        repository.updateDrawingSharedStatus(drawingId.toString(), true)
-                        repository.updateDrawingServerId(drawingId.toString(), serverDrawingId)
+                        repository.updateDrawingSharedStatus(drawingId, true)
+                        repository.updateDrawingServerId(drawingId, serverDrawingId)
                         onSuccess(serverDrawingId)
                     } else {
                         Log.e("UploadDrawing", "Failed to retrieve server drawing ID")
@@ -316,6 +293,18 @@ class CustomViewModel(application: Application) : AndroidViewModel(application) 
                 }
             }
         }
+    }
+
+    fun updateDrawingSharedStatus(drawingId: String, isShared: Boolean) {
+        return repository.updateDrawingSharedStatus(drawingId, isShared)
+    }
+
+    fun updateDrawingServerId(drawingId: String, serverDrawingId: Int) {
+        return repository.updateDrawingServerId(drawingId, serverDrawingId)
+    }
+
+    fun unshareDrawingFromServer(drawingId: String, function: () -> Unit) {
+        return repository.unshareDrawingFromServer(drawingId, function)
     }
 
 
