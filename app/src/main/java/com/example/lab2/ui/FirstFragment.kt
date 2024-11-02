@@ -23,6 +23,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.lab2.CustomViewModel
 import java.io.File
+
 @Composable
 fun StartScreen(
     navController: NavController,
@@ -30,7 +31,6 @@ fun StartScreen(
     onImportImageClick: () -> Unit
 ) {
     val drawings by viewModel.getAllDrawings().observeAsState(listOf())
-
     var showDialog by remember { mutableStateOf(false) }
     var drawingIdInput by remember { mutableStateOf("") }
 
@@ -65,12 +65,23 @@ fun StartScreen(
                 confirmButton = {
                     Button(onClick = {
                         showDialog = false
-                        val drawingId = drawingIdInput.toIntOrNull()
-                        if (drawingId != null) {
-                            // send the ID to the server
-
+                        if (drawingIdInput.isNotEmpty()) {
+                            val drawingId = drawingIdInput.toIntOrNull()
+                            if (drawingId != null) {
+                                viewModel.getDrawingById(drawingId.toString()){ drawingData ->
+                                    if(drawingData !=null){
+                                        Log.d("StartScreen", "Drawing retrieved: ${drawingData}")
+                                        navController.navigate("canvas_screen/$drawingId")
+                                    }
+                                    else{
+                                        Log.d("StartScreen", "No drawing with id: ${drawingId}")
+                                    }
+                                }
+                            } else {
+                                Log.e("StartScreen", "Invalid ID")
+                            }
                         } else {
-                            Log.e("StartScreen", "Invalid ID")
+                            Log.e("StartScreen", "Invalid ID: Empty input")
                         }
                     }) {
                         Text("Submit")
@@ -128,18 +139,28 @@ fun StartScreen(
                         Button(
                             onClick = {
                                 if (drawing.isShared) {
-                                    viewModel.unshareDrawingFromServer(drawing.id)
-                                    viewModel.updateDrawingSharedStatus(drawing.id, false)
+                                    viewModel.repository.unshareDrawingFromServer(drawing.id.toInt()) {
+                                        viewModel.repository.updateDrawingSharedStatus(
+                                            drawing.id,
+                                            false
+                                        )
+                                    }
                                 } else {
                                     viewModel.uploadDrawingToServer(
                                         File(drawing.filePath),
                                         drawing.color,
                                         drawing.brushSize,
                                         "default_user_id",
-                                        drawing.id
+                                        drawing.id.toInt()
                                     ) { serverDrawingId ->
-                                        viewModel.updateDrawingSharedStatus(drawing.id, true)
-                                        viewModel.updateDrawingServerId(drawing.id, serverDrawingId)
+                                        viewModel.repository.updateDrawingSharedStatus(
+                                            drawing.id,
+                                            true
+                                        )
+                                        viewModel.repository.updateDrawingServerId(
+                                            drawing.id,
+                                            serverDrawingId
+                                        )
                                     }
                                 }
                             }

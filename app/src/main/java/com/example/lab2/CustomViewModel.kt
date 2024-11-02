@@ -9,7 +9,6 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 
 import android.graphics.Paint
-import android.net.Uri
 import android.os.Environment
 import android.provider.MediaStore
 
@@ -23,9 +22,9 @@ import androidx.core.content.FileProvider
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.viewModelScope
-import com.example.lab2.data.DrawingDao
+
 import com.example.lab2.data.DrawingData
-import com.example.lab2.data.DrawingDatabase
+
 import com.example.lab2.data.DrawingRepository
 import com.example.lab2.network.RetrofitInstance
 import kotlinx.coroutines.Dispatchers
@@ -48,27 +47,18 @@ import okhttp3.RequestBody.Companion.asRequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
 
 
-class CustomViewModel(application: Application) : AndroidViewModel(application){
+class CustomViewModel(application: Application) : AndroidViewModel(application) {
     private val _importedBitmap = MutableStateFlow<Bitmap?>(null)
     val importedBitmap: StateFlow<Bitmap?> = _importedBitmap
 
-    private val drawingDao: DrawingDao = DrawingDatabase.getDatabase(application).drawingDao()
-    private val repository: DrawingRepository
-
-
-    init {
-        val drawingDao = DrawingDatabase.getDatabase(application).drawingDao()
-        repository = DrawingRepository(drawingDao)
-    }
-
-
+    val repository =  DrawingRepository(viewModelScope)
 
     // Change from livedata to stateflow
     // StateFlow to hold the drawing path
     private val _drawingPath = MutableStateFlow<Path?>(null)
     private val _colorPaint = MutableStateFlow<Int>(Color.Black.toArgb())
-    val drawingPath:  StateFlow<Path?> = _drawingPath
-    val colorP : StateFlow<Int> = _colorPaint
+    val drawingPath: StateFlow<Path?> = _drawingPath
+    val colorP: StateFlow<Int> = _colorPaint
     val brushSize = MutableStateFlow(10f)
 
     //StateFlow to hold the paint brush data
@@ -82,24 +72,26 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
         brushSize: Float,
         onComplete: (Boolean) -> Unit
     ) {
-        val currentTime = System.currentTimeMillis()
-        val fileName = "drawing_${currentTime}.png"
         viewModelScope.launch(Dispatchers.IO) {
-            val filePath = saveBitmapToStorage(context, bitmap, fileName)
+            val currentTime = System.currentTimeMillis()
+            val fileName = "drawing_${currentTime}.png"
+            val filePath = repository.saveBitmapToStorage(context, bitmap, fileName)
             if (filePath != null) {
-                val drawing = DrawingData(
-                    filePath = filePath,
-                    color = color,
-                    brushSize = brushSize,
-                    date = currentTime
-                )
-                repository.insert(drawing)
-                Log.d("SaveDrawing", "Drawing saved successfully in the database")
-                withContext(Dispatchers.Main) {
-                    onComplete(true)
+                repository.uploadBitmapToStorage(filePath) { success, downloadUrl ->
+                    if (success && downloadUrl != null) {
+                        val drawing = DrawingData(
+                            filePath = filePath,
+                            color = color,
+                            brushSize = brushSize,
+                            date = currentTime
+                        )
+                        repository.insert(drawing)
+                        Log.d("storage", "Drawing saved successfully in the firestore db")
+                    }
                 }
+                withContext(Dispatchers.Main) { onComplete(true) }
             } else {
-                Log.e("SaveDrawing", "Failed to save the bitmap to storage")
+                Log.e("storage", "Failed to save the bitmap to storage")
                 withContext(Dispatchers.Main) {
                     onComplete(false)
                 }
@@ -108,56 +100,46 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
     }
 
 
-
     //    save drawing to device storage
-    fun saveBitmapToStorage(context: Context, bitmap: Bitmap, fileName: String): String? {
-        val directory = context.getExternalFilesDir("Drawings") ?: return null
-        if (!directory.exists()) {
-            directory.mkdirs()
-        }
-
-        val file = File(directory, fileName)
-        var outputStream: FileOutputStream? = null
-
-        return try {
-            outputStream = FileOutputStream(file)
-            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
-            outputStream.flush()
-
-            Log.d("SavePath", "Bitmap saved at: ${file.absolutePath}")
-
-            file.absolutePath
-        } catch (e: IOException) {
-            e.printStackTrace()
-            Log.e("SavePath", "Failed to save bitmap: ${e.localizedMessage}")
-            null
-        } finally {
-            outputStream?.close()
-        }
-    }
-
-
-
-
+//    fun saveBitmapToStorage(context: Context, bitmap: Bitmap, fileName: String): String? {
+//        val directory = context.getExternalFilesDir("Drawings") ?: return null
+//        if (!directory.exists()) {
+//            directory.mkdirs()
+//        }
+//
+//        val file = File(directory, fileName)
+//        var outputStream: FileOutputStream? = null
+//
+//        return try {
+//            outputStream = FileOutputStream(file)
+//            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+//            outputStream.flush()
+//
+//            Log.d("SavePath", "Bitmap saved at: ${file.absolutePath}")
+//
+//            file.absolutePath
+//        } catch (e: IOException) {
+//            e.printStackTrace()
+//            Log.e("SavePath", "Failed to save bitmap: ${e.localizedMessage}")
+//            null
+//        } finally {
+//            outputStream?.close()
+//        }
+//    }
 
 
     fun loadDrawingFromDatabase(drawingId: Int): StateFlow<DrawingData?> {
-        val drawingDataFlow = MutableStateFlow<DrawingData?>(null)
-        viewModelScope.launch(Dispatchers.IO) {
-            repository.getDrawing(drawingId).collect { drawingData ->
-                drawingDataFlow.value = drawingData
-            }
-        }
-        return drawingDataFlow
+        return repository.loadDrawingFromDatabase(drawingId)
     }
 
-    fun shareDrawing(context: Context, bitmap: Bitmap) {
+    suspend fun shareDrawing(context: Context, bitmap: Bitmap) {
         val fileName = "drawing_${System.currentTimeMillis()}.png"
-        val filePath = saveBitmapToStorage(context, bitmap, fileName)
+        val filePath = repository.saveBitmapToStorage(context, bitmap, fileName)
 
         filePath?.let {
             val file = File(it)
-            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+            val uri =
+                FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
             val shareIntent = Intent().apply {
                 action = Intent.ACTION_SEND
                 putExtra(Intent.EXTRA_STREAM, uri)
@@ -172,7 +154,20 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
     fun saveImportedBitmap(bitmap: Bitmap) {
         _importedBitmap.value = bitmap
     }
-    fun importImage(context: Context, uri: android.net.Uri, onSuccess: (Bitmap) -> Unit, onFailure: () -> Unit) {
+
+    fun getDrawingById(drawingId: String, onResult: (DrawingData?)->Unit){
+        viewModelScope.launch {
+            val drawing = repository.getDrawing(drawingId)
+            onResult(drawing)
+        }
+    }
+
+    fun importImage(
+        context: Context,
+        uri: android.net.Uri,
+        onSuccess: (Bitmap) -> Unit,
+        onFailure: () -> Unit
+    ) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val inputStream = context.contentResolver.openInputStream(uri)
@@ -196,12 +191,8 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
         }
     }
 
-
-    fun getLastSavedDrawingId(): Flow<Int?> {
-        return repository.getLastSavedDrawingId()
-    }
     fun getAllDrawings(): LiveData<List<DrawingData>> {
-        return drawingDao.getAllDrawings()
+        return repository.getAllDrawings()
     }
 
     fun uploadDrawingToServer(
@@ -210,7 +201,7 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
         brushSize: Float,
         userId: String,
         drawingId: Int,
-        onSuccess: (Int) -> Unit // 添加一个回调函数，用于上传成功后处理
+        onSuccess: (Int) -> Unit
     ) {
         val fileReqBody = file.asRequestBody("image/png".toMediaTypeOrNull())
         val filePart = MultipartBody.Part.createFormData("file", file.name, fileReqBody)
@@ -222,14 +213,21 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
 
         viewModelScope.launch {
             try {
-                val response = RetrofitInstance.api.uploadDrawing(filePart, colorReqBody, brushSizeReqBody, userIdReqBody)
+                val response = RetrofitInstance.api.uploadDrawing(
+                    filePart,
+                    colorReqBody,
+                    brushSizeReqBody,
+                    userIdReqBody
+                )
                 if (response.isSuccessful) {
                     Log.d("UploadDrawing", "File uploaded successfully")
 
                     val serverDrawingId = response.body()?.drawingId ?: -1
 
                     if (serverDrawingId != -1) {
-                        onSuccess(serverDrawingId) // 调用成功回调函数，将ID传递给它
+                        repository.updateDrawingSharedStatus(drawingId.toString(), true)
+                        repository.updateDrawingServerId(drawingId.toString(), serverDrawingId)
+                        onSuccess(serverDrawingId)
                     } else {
                         Log.e("UploadDrawing", "Failed to retrieve server drawing ID")
                     }
@@ -243,35 +241,37 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
         }
     }
 
-    fun updateDrawingSharedStatus(drawingId: Int, isShared: Boolean) {
-        viewModelScope.launch(Dispatchers.IO) {
-            drawingDao.updateDrawingSharedStatus(drawingId, isShared)
-        }
-    }
+//    fun updateDrawingSharedStatus(drawingId: Int, isShared: Boolean) {
+//        viewModelScope.launch(Dispatchers.IO) {
+//            drawingDao.updateDrawingSharedStatus(drawingId, isShared)
+//        }
+//    }
 
-    fun updateDrawingServerId(drawingId: Int, serverDrawingId: Int) {
-        viewModelScope.launch(Dispatchers.IO) {
-            drawingDao.updateDrawingServerId(drawingId, serverDrawingId)
-        }
-    }
+//    fun updateDrawingServerId(drawingId: Int, serverDrawingId: Int) {
+//        viewModelScope.launch(Dispatchers.IO) {
+//            drawingDao.updateDrawingServerId(drawingId, serverDrawingId)
+//        }
+//    }
 
-    fun unshareDrawingFromServer(drawingId: Int) {
-        viewModelScope.launch {
-            try {
-                val response = RetrofitInstance.api.deleteDrawing(drawingId)
-                if (response.isSuccessful) {
-                    Log.d("UnshareDrawing", "File unshared successfully")
-                    updateDrawingSharedStatus(drawingId, false)
-                } else {
-                    Log.e("UnshareDrawing", "Failed to unshare file. Error code: ${response.code()}")
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Log.e("UnshareDrawing", "Exception occurred during unshare: ${e.localizedMessage}")
-            }
-        }
-    }
-
+//    fun unshareDrawingFromServer(drawingId: Int) {
+//        viewModelScope.launch {
+//            try {
+//                val response = RetrofitInstance.api.deleteDrawing(drawingId)
+//                if (response.isSuccessful) {
+//                    Log.d("UnshareDrawing", "File unshared successfully")
+//                    repository.updateDrawingSharedStatus(drawingId.toString(), false)
+//                } else {
+//                    Log.e(
+//                        "UnshareDrawing",
+//                        "Failed to unshare file. Error code: ${response.code()}"
+//                    )
+//                }
+//            } catch (e: Exception) {
+//                e.printStackTrace()
+//                Log.e("UnshareDrawing", "Exception occurred during unshare: ${e.localizedMessage}")
+//            }
+//        }
+//    }
 
 
     fun saveDrawingToGallery(context: Context, bitmap: Bitmap, onComplete: (Boolean) -> Unit) {
@@ -280,7 +280,10 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
             val contentValues = ContentValues().apply {
                 put(MediaStore.Images.Media.DISPLAY_NAME, filename)
                 put(MediaStore.Images.Media.MIME_TYPE, "image/png")
-                put(MediaStore.Images.Media.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/MyDrawings")
+                put(
+                    MediaStore.Images.Media.RELATIVE_PATH,
+                    Environment.DIRECTORY_PICTURES + "/MyDrawings"
+                )
             }
 
             val resolver = context.contentResolver
@@ -314,12 +317,6 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
             }
         }
     }
-
-
-
-
-
-
 
 
 }

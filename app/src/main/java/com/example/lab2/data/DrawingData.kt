@@ -1,16 +1,16 @@
 package com.example.lab2.data
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
+import com.google.firebase.firestore.PropertyName
 
-@Entity(tableName = "drawings")
 data class DrawingData(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
-    val filePath: String,
-    val color: Int,
-    val brushSize: Float,
-    val date: Long,
-    val isShared: Boolean = false,
-    val serverDrawingId: Int? = null
+    val id: String = "",
+    val filePath: String = "",
+    val color: Int = 0,
+    val brushSize: Float = 0f,
+    val date: Long = 0L,
+    @PropertyName("shared") val isShared: Boolean = false,
+    val serverDrawingId: Int? = -1
 )
+
+
 

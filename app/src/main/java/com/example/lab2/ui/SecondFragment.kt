@@ -129,7 +129,7 @@ fun CanvasScreen(
 
     if (drawingId != null) {
         Log.d("CanvasScreen", "Drawing ID: $drawingId")
-        val drawingData by viewModel.loadDrawingFromDatabase(drawingId).collectAsState(initial = null)
+        val drawingData by viewModel.repository.loadDrawingFromDatabase(drawingId).collectAsState(initial = null)
 
         drawingData?.let {
             Log.d("CanvasScreen", "Loading bitmap from file path: ${it.filePath}")
@@ -250,8 +250,8 @@ fun CanvasScreen(
                         if (localDrawingId != -1) {
                             viewModel.uploadDrawingToServer(file, color, brushSize, "default_user_id", localDrawingId) { serverDrawingId ->
 
-                                viewModel.updateDrawingSharedStatus(localDrawingId, true)
-                                viewModel.updateDrawingServerId(localDrawingId, serverDrawingId)
+                                viewModel.repository.updateDrawingSharedStatus(localDrawingId.toString(), true)
+                                viewModel.repository.updateDrawingServerId(localDrawingId.toString(), serverDrawingId)
                             }
                         } else {
                             Toast.makeText(context, "Invalid drawing ID", Toast.LENGTH_SHORT).show()

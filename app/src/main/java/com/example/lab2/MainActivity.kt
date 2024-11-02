@@ -21,6 +21,7 @@ import com.example.lab2.ui.StartScreen
 import com.example.lab2.ui.LoginSignupScreen
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 
 class MainActivity : AppCompatActivity() {
     private lateinit var importImageLauncher: ActivityResultLauncher<Intent>
@@ -30,6 +31,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
+//        FirebaseFirestore.setLoggingEnabled(true)
         enableEdgeToEdge()
         customViewModel = CustomViewModel(application)
         auth = FirebaseAuth.getInstance()
