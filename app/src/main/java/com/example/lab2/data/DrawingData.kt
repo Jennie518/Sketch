@@ -9,7 +9,7 @@ data class DrawingData(
     val brushSize: Float = 0f,
     val date: Long = 0L,
     @PropertyName("shared") val isShared: Boolean = false,
-    val serverDrawingId: Int? = -1
+//    val serverDrawingId: Int? = -1
 )
 
 

@@ -66,14 +66,14 @@ fun StartScreen(
                     Button(onClick = {
                         showDialog = false
                         if (drawingIdInput.isNotEmpty()) {
-                            val drawingId = drawingIdInput.toIntOrNull()
-                            if (drawingId != null) {
-                                viewModel.getDrawingById(drawingId.toString()){ drawingData ->
-                                    if(drawingData !=null){
+                            var drawingId = ""
+                            drawingId = drawingIdInput
+                            if (drawingId != "") {
+                                viewModel.getDrawingById(drawingId) { drawingData ->
+                                    if (drawingData != null) {
                                         Log.d("StartScreen", "Drawing retrieved: ${drawingData}")
                                         navController.navigate("canvas_screen/$drawingId")
-                                    }
-                                    else{
+                                    } else {
                                         Log.d("StartScreen", "No drawing with id: ${drawingId}")
                                     }
                                 }
@@ -106,9 +106,9 @@ fun StartScreen(
                     val file = File(drawing.filePath)
                     if (file.exists()) {
                         try {
-                        thumbnailBitmap = BitmapFactory.decodeFile(file.path)}
-                        catch (e:Exception){
-                            Log.e("decode","Fail to load bitmap: ${e.message}")
+                            thumbnailBitmap = BitmapFactory.decodeFile(file.path)
+                        } catch (e: Exception) {
+                            Log.e("decode", "Fail to load bitmap: ${e.message}")
                         }
 
                     } else {
@@ -143,29 +143,17 @@ fun StartScreen(
                         Button(
                             onClick = {
                                 if (drawing.isShared) {
-                                    viewModel.unshareDrawingFromServer(drawing.id) {
-                                        viewModel.updateDrawingSharedStatus(
-                                            drawing.id,
-                                            false
-                                        )
-                                    }
+
+                                    viewModel.updateDrawingSharedStatus(
+                                        drawing.id,
+                                        false
+                                    )
+
                                 } else {
-                                    viewModel.uploadDrawingToServer(
-                                        File(drawing.filePath),
-                                        drawing.color,
-                                        drawing.brushSize,
-                                        "default_user_id",
-                                        drawing.id
-                                    ) { serverDrawingId ->
-                                        viewModel.updateDrawingSharedStatus(
-                                            drawing.id,
-                                            true
-                                        )
-                                        viewModel.updateDrawingServerId(
-                                            drawing.id,
-                                            serverDrawingId
-                                        )
-                                    }
+                                    viewModel.updateDrawingSharedStatus(
+                                        drawing.id,
+                                        true
+                                    )
                                 }
                             }
                         ) {

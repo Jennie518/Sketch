@@ -26,25 +26,13 @@ import androidx.lifecycle.viewModelScope
 import com.example.lab2.data.DrawingData
 
 import com.example.lab2.data.DrawingRepository
-import com.example.lab2.network.RetrofitInstance
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.io.FileOutputStream
-import java.io.IOException
 import java.io.OutputStream
-
-
-import okhttp3.MediaType
-import okhttp3.MediaType.Companion.toMediaTypeOrNull
-import okhttp3.MultipartBody
-import okhttp3.RequestBody
-import okhttp3.RequestBody.Companion.asRequestBody
-import okhttp3.RequestBody.Companion.toRequestBody
 
 
 class CustomViewModel(application: Application) : AndroidViewModel(application) {
@@ -171,52 +159,52 @@ class CustomViewModel(application: Application) : AndroidViewModel(application) 
         return repository.getAllDrawings()
     }
 
-    fun uploadDrawingToServer(
-        file: File,
-        color: Int,
-        brushSize: Float,
-        userId: String,
-        drawingId: String,
-        onSuccess: (Int) -> Unit
-    ) {
-        val fileReqBody = file.asRequestBody("image/png".toMediaTypeOrNull())
-        val filePart = MultipartBody.Part.createFormData("file", file.name, fileReqBody)
-
-
-        val colorReqBody = color.toString().toRequestBody("text/plain".toMediaTypeOrNull())
-        val brushSizeReqBody = brushSize.toString().toRequestBody("text/plain".toMediaTypeOrNull())
-        val userIdReqBody = userId.toRequestBody("text/plain".toMediaTypeOrNull())
-
-        viewModelScope.launch {
-            try {
-                val response = RetrofitInstance.api.uploadDrawing(
-                    filePart,
-                    colorReqBody,
-                    brushSizeReqBody,
-                    userIdReqBody
-                )
-                if (response.isSuccessful) {
-                    Log.e("UploadDrawing", "File uploaded successfully")
-
-                    val serverDrawingId = response.body()?.drawingId ?: -1
-                    Log.e("generatedServerID", "generatedServerID: $serverDrawingId")
-
-                    if (serverDrawingId != -1) {
-                        repository.updateDrawingSharedStatus(drawingId, true)
-                        repository.updateDrawingServerId(drawingId, serverDrawingId)
-                        onSuccess(serverDrawingId)
-                    } else {
-                        Log.e("UploadDrawing", "Failed to retrieve server drawing ID")
-                    }
-                } else {
-                    Log.e("UploadDrawing", "Failed to upload file. Error code: ${response.code()}")
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Log.e("UploadDrawing", "Exception occurred during upload: ${e.localizedMessage}")
-            }
-        }
-    }
+//    fun uploadDrawingToServer(
+//        file: File,
+//        color: Int,
+//        brushSize: Float,
+//        userId: String,
+//        drawingId: String,
+//        onSuccess: (Int) -> Unit
+//    ) {
+//        val fileReqBody = file.asRequestBody("image/png".toMediaTypeOrNull())
+//        val filePart = MultipartBody.Part.createFormData("file", file.name, fileReqBody)
+//
+//
+//        val colorReqBody = color.toString().toRequestBody("text/plain".toMediaTypeOrNull())
+//        val brushSizeReqBody = brushSize.toString().toRequestBody("text/plain".toMediaTypeOrNull())
+//        val userIdReqBody = userId.toRequestBody("text/plain".toMediaTypeOrNull())
+//
+//        viewModelScope.launch {
+//            try {
+//                val response = RetrofitInstance.api.uploadDrawing(
+//                    filePart,
+//                    colorReqBody,
+//                    brushSizeReqBody,
+//                    userIdReqBody
+//                )
+//                if (response.isSuccessful) {
+//                    Log.e("UploadDrawing", "File uploaded successfully")
+//
+//                    val serverDrawingId = response.body()?.drawingId ?: -1
+//                    Log.e("generatedServerID", "generatedServerID: $serverDrawingId")
+//
+//                    if (serverDrawingId != -1) {
+//                        repository.updateDrawingSharedStatus(drawingId, true)
+//                        repository.updateDrawingServerId(drawingId, serverDrawingId)
+//                        onSuccess(serverDrawingId)
+//                    } else {
+//                        Log.e("UploadDrawing", "Failed to retrieve server drawing ID")
+//                    }
+//                } else {
+//                    Log.e("UploadDrawing", "Failed to upload file. Error code: ${response.code()}")
+//                }
+//            } catch (e: Exception) {
+//                e.printStackTrace()
+//                Log.e("UploadDrawing", "Exception occurred during upload: ${e.localizedMessage}")
+//            }
+//        }
+//    }
 
 //    fun updateDrawingSharedStatus(drawingId: Int, isShared: Boolean) {
 //        viewModelScope.launch(Dispatchers.IO) {
@@ -299,13 +287,9 @@ class CustomViewModel(application: Application) : AndroidViewModel(application) 
         return repository.updateDrawingSharedStatus(drawingId, isShared)
     }
 
-    fun updateDrawingServerId(drawingId: String, serverDrawingId: Int) {
-        return repository.updateDrawingServerId(drawingId, serverDrawingId)
-    }
-
-    fun unshareDrawingFromServer(drawingId: String, function: () -> Unit) {
-        return repository.unshareDrawingFromServer(drawingId, function)
-    }
+//    fun unshareDrawingFromServer(drawingId: String, function: () -> Unit) {
+//        return repository.unshareDrawingFromServer(drawingId, function)
+//    }
 
 
 }

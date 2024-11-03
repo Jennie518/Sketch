@@ -159,14 +159,13 @@ fun CanvasScreen(
             finalBitmap?.let { bitmap ->
 
 
-
                 viewModel.saveDrawingToDatabase(
                     navController.context,
                     bitmap,
                     localColor.toArgb(),
                     localBrushSize,
 
-                ) { success, dID ->
+                    ) { success, dID ->
                     if (success && dID.isNotEmpty()) {
                         val file = File(context.cacheDir, "drawing.png")
                         val outputStream = FileOutputStream(file)
@@ -178,23 +177,11 @@ fun CanvasScreen(
 //                        Log.e("localDrawingId","localDrawingId: ${drawingId}")
                         Log.e("localDrawingId", "dID: ${dID}")
 
-                        viewModel.uploadDrawingToServer(
-                            file,
-                            localColor.toArgb(),
-                            localBrushSize,
-                            "default_user_id",
+                        viewModel.updateDrawingSharedStatus(
                             dID,
-                        ) { serverDrawingId ->
+                            true
+                        )
 
-                            viewModel.updateDrawingSharedStatus(
-                                dID,
-                                true
-                            )
-                            viewModel.updateDrawingServerId(
-                                dID,
-                                serverDrawingId
-                            )
-                        }
                         navController.popBackStack()
                     } else {
                         Toast.makeText(

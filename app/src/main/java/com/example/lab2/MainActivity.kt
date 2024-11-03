@@ -19,9 +19,12 @@ import androidx.navigation.compose.rememberNavController
 import com.example.lab2.ui.CanvasScreen
 import com.example.lab2.ui.StartScreen
 import com.example.lab2.ui.LoginSignupScreen
+import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.firestore
+import com.google.firebase.firestore.firestoreSettings
 
 class MainActivity : AppCompatActivity() {
     private lateinit var importImageLauncher: ActivityResultLauncher<Intent>
@@ -32,6 +35,8 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         FirebaseApp.initializeApp(this)
 //        FirebaseFirestore.setLoggingEnabled(true)
+
+//
         enableEdgeToEdge()
         customViewModel = CustomViewModel(application)
         auth = FirebaseAuth.getInstance()
@@ -77,9 +82,17 @@ fun ComposeNavigation(
 
     NavHost(navController = navController, startDestination = "login_signup_screen") {
         composable("login_signup_screen") {
-            LoginSignupScreen(navController = navController, auth = auth) // Navigate to Login/Signup screen
+            LoginSignupScreen(
+                navController = navController,
+                auth = auth
+            ) // Navigate to Login/Signup screen
         }
-        composable("start_screen") { StartScreen(navController, onImportImageClick = onImportImageClick) }
+        composable("start_screen") {
+            StartScreen(
+                navController,
+                onImportImageClick = onImportImageClick
+            )
+        }
         composable("canvas_screen") {
             CanvasScreen(
                 navController = navController,
@@ -103,15 +116,12 @@ fun ComposeNavigation(
 }
 
 
-
 @Preview(showBackground = true)
 @Composable
 fun DefaultPreview() {
-    val fakeCustomViewModel = CustomViewModel(application = Application())
-
     ComposeNavigation(
         onImportImageClick = {},
-        customViewModel = fakeCustomViewModel,
-        auth = FirebaseAuth.getInstance() // Mock Firebase Auth for preview
+        customViewModel = CustomViewModel(Application()),
+        auth = FirebaseAuth.getInstance() // FirebaseAuth instance for mock preview
     )
 }

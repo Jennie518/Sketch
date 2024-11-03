@@ -9,8 +9,7 @@ import android.widget.Toast
 import androidx.compose.ui.contentcapture.ContentCaptureManager
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.viewModelScope
-import com.example.lab2.network.RetrofitInstance
+
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.toObject
 import com.google.firebase.storage.FirebaseStorage
@@ -132,40 +131,31 @@ class DrawingRepository(private val coroutineScope: CoroutineScope) {
             .addOnFailureListener { e -> Log.e("firestore", "fail to update shared status") }
     }
 
-    fun updateDrawingServerId(drawingId: String, serverDrawingId: Int) {
-        db.collection("drawings")
-            .document(drawingId)
-            .update("serverDrawingId", serverDrawingId)
-            .addOnSuccessListener { Log.e("DrawingServerId", "DrawingServerID saved!") }
-            .addOnFailureListener { e ->
-                Log.e(
-                    "DrawingServerId",
-                    "fail update server ID ${e.printStackTrace()}"
-                )
-            }
-    }
+//    fun updateDrawingServerId(drawingId: String, serverDrawingId: Int) {
+//        db.collection("drawings")
+//            .document(drawingId)
+//            .update("serverDrawingId", serverDrawingId)
+//            .addOnSuccessListener { Log.e("DrawingServerId", "DrawingServerID saved!") }
+//            .addOnFailureListener { e ->
+//                Log.e(
+//                    "DrawingServerId",
+//                    "fail update server ID ${e.printStackTrace()}"
+//                )
+//            }
+//    }
 
-    fun unshareDrawingFromServer(drawingId: String, onUnsharedSucess: () -> Unit) {
-        coroutineScope.launch(Dispatchers.IO) {
-            try {
-                val response = RetrofitInstance.api.deleteDrawing(drawingId)
-                if (response.isSuccessful) {
-                    Log.d("UnshareDrawing", "File unshared successfully")
-                    updateDrawingSharedStatus(drawingId, false)
-
-                    onUnsharedSucess()
-                } else {
-                    Log.e(
-                        "UnshareDrawing",
-                        "Failed to unshare file. Error code: ${response.code()}"
-                    )
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Log.e("UnshareDrawing", "Exception occurred during unshare: ${e.localizedMessage}")
-            }
-        }
-    }
+//    fun unshareDrawingFromServer(drawingId: String, onUnsharedSucess: () -> Unit) {
+//        db.collection("drawings")
+//            .document(drawingId)
+//            .update("isShared", serverDrawingId)
+//            .addOnSuccessListener { Log.e("DrawingServerId", "DrawingServerID saved!") }
+//            .addOnFailureListener { e ->
+//                Log.e(
+//                    "DrawingServerId",
+//                    "fail update server ID ${e.printStackTrace()}"
+//                )
+//            }
+//    }
 
     fun loadDrawingFromDatabase(drawingId: String): StateFlow<DrawingData?> {
         val drawingDataFlow = MutableStateFlow<DrawingData?>(null)
