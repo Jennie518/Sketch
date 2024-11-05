@@ -19,6 +19,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.lab2.CustomViewModel
@@ -27,7 +28,8 @@ import java.io.File
 fun StartScreen(
     navController: NavController,
     viewModel: CustomViewModel = viewModel(),
-    onImportImageClick: () -> Unit
+    onImportImageClick: () -> Unit,
+    userId: String
 ) {
     val drawings by viewModel.getAllDrawings().observeAsState(listOf())
 
@@ -69,8 +71,11 @@ fun StartScreen(
                         val drawingId = drawingIdInput.toIntOrNull()
                         if (drawingId != null) {
                             // send the ID to the server
-                            viewModel.fetchDrawingFromServer(drawingId, onSuccess = { drawing ->
-                                navController.navigate("canvas_screen/${drawing.id}")
+                            viewModel.fetchDrawingFileFromServer(drawingId, onSuccess = { bitmap ->
+                                // Pass the bitmap to the canvas screen
+                                viewModel.saveImportedBitmap(bitmap)
+                                navController.navigate("canvas_screen")
+
                             }, onFailure = {
                                 Toast.makeText(context, "Drawing not found", Toast.LENGTH_SHORT).show()
                             })
@@ -145,7 +150,8 @@ fun StartScreen(
                                         File(drawing.filePath),
                                         drawing.color,
                                         drawing.brushSize,
-                                        "default_user_id",
+//                                        "default_user_id",
+                                        userId,
                                         drawing.id
                                     ) { serverDrawingId ->
                                         viewModel.updateDrawingSharedStatus(drawing.id, true)

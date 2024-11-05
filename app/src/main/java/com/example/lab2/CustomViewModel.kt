@@ -28,6 +28,7 @@ import com.example.lab2.data.DrawingData
 import com.example.lab2.data.DrawingDatabase
 import com.example.lab2.data.DrawingRepository
 import com.example.lab2.network.RetrofitInstance
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -52,12 +53,12 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
     private val _importedBitmap = MutableStateFlow<Bitmap?>(null)
     val importedBitmap: StateFlow<Bitmap?> = _importedBitmap
 
-    private val drawingDao: DrawingDao = DrawingDatabase.getDatabase(application).drawingDao()
+    private val drawingDao: DrawingDao = DrawingDatabase.getDatabase(application,FirebaseAuth.getInstance().currentUser?.uid ?: "").drawingDao()
     private val repository: DrawingRepository
 
 
     init {
-        val drawingDao = DrawingDatabase.getDatabase(application).drawingDao()
+        val drawingDao = DrawingDatabase.getDatabase(application, FirebaseAuth.getInstance().currentUser?.uid ?: "").drawingDao()
         repository = DrawingRepository(drawingDao)
     }
 
@@ -106,6 +107,58 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
             }
         }
     }
+//    fun fetchDrawingFromServer(serverDrawingId: Int, onSuccess: (DrawingData) -> Unit, onFailure: () -> Unit) {
+//        viewModelScope.launch {
+//            try {
+//                val response = RetrofitInstance.api.getDrawingById(serverDrawingId)
+//                if (response.isSuccessful && response.body() != null) {
+//                    val drawing = response.body()!!
+//                    Log.d("FetchDrawing", "Fetched drawing from server: ${drawing.serverDrawingId}")
+//                    onSuccess(drawing)
+//                } else {
+//                    Log.e("FetchDrawing", "Failed to fetch drawing. Error code: ${response.code()}")
+//                    onFailure()
+//                }
+//            } catch (e: Exception) {
+//                e.printStackTrace()
+//                Log.e("FetchDrawing", "Exception occurred while fetching drawing: ${e.localizedMessage}")
+//                onFailure()
+//            }
+//        }
+//    }
+
+    fun fetchDrawingFileFromServer(
+        serverDrawingId: Int,
+        onSuccess: (Bitmap) -> Unit,
+        onFailure: () -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val response = RetrofitInstance.api.getDrawingFileById(serverDrawingId)
+                if (response.isSuccessful && response.body() != null) {
+                    val responseBody = response.body()!!
+                    val byteArray = responseBody.bytes()
+                    val bitmap = BitmapFactory.decodeByteArray(byteArray, 0, byteArray.size)
+
+                    if (bitmap != null) {
+                        Log.d("FetchDrawingFile", "Fetched drawing from server successfully")
+                        onSuccess(bitmap)
+                    } else {
+                        Log.e("FetchDrawingFile", "Failed to decode bitmap from server response")
+                        onFailure()
+                    }
+                } else {
+                    Log.e("FetchDrawingFile", "Failed to fetch drawing. Error code: ${response.code()}")
+                    onFailure()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Log.e("FetchDrawingFile", "Exception occurred while fetching drawing: ${e.localizedMessage}")
+                onFailure()
+            }
+        }
+    }
+
 
 
 
@@ -137,6 +190,7 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
     }
 
 
+
     fun loadDrawingFromDatabase(drawingId: Int): StateFlow<DrawingData?> {
         val drawingDataFlow = MutableStateFlow<DrawingData?>(null)
         viewModelScope.launch(Dispatchers.IO) {
@@ -147,22 +201,22 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
         return drawingDataFlow
     }
 
-    fun shareDrawing(context: Context, bitmap: Bitmap) {
-        val fileName = "drawing_${System.currentTimeMillis()}.png"
-        val filePath = saveBitmapToStorage(context, bitmap, fileName)
-
-        filePath?.let {
-            val file = File(it)
-            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-            val shareIntent = Intent().apply {
-                action = Intent.ACTION_SEND
-                putExtra(Intent.EXTRA_STREAM, uri)
-                type = "image/*"
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-            context.startActivity(Intent.createChooser(shareIntent, "Share drawing via"))
-        }
-    }
+//    fun shareDrawing(context: Context, bitmap: Bitmap) {
+//        val fileName = "drawing_${System.currentTimeMillis()}.png"
+//        val filePath = saveBitmapToStorage(context, bitmap, fileName)
+//
+//        filePath?.let {
+//            val file = File(it)
+//            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
+//            val shareIntent = Intent().apply {
+//                action = Intent.ACTION_SEND
+//                putExtra(Intent.EXTRA_STREAM, uri)
+//                type = "image/*"
+//                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+//            }
+//            context.startActivity(Intent.createChooser(shareIntent, "Share drawing via"))
+//        }
+//    }
     fun getDrawingById(drawingId: Int): LiveData<DrawingData?> {
         return drawingDao.getDrawingById(drawingId)
     }
@@ -267,23 +321,7 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
             }
         }
     }
-    fun fetchDrawingFromServer(drawingId: Int, onSuccess: (DrawingData) -> Unit, onFailure: () -> Unit) {
-        viewModelScope.launch {
-            try {
-                val response = RetrofitInstance.api.getDrawingById(drawingId)
-                if (response.isSuccessful && response.body() != null) {
-                    onSuccess(response.body()!!)
-                } else {
-                    Log.e("FetchDrawing", "Failed to fetch drawing. Error code: ${response.code()}")
-                    onFailure()
-                }
-            } catch (e: Exception) {
-                e.printStackTrace()
-                Log.e("FetchDrawing", "Exception occurred while fetching drawing: ${e.localizedMessage}")
-                onFailure()
-            }
-        }
-    }
+
 
 
 

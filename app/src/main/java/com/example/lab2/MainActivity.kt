@@ -33,6 +33,10 @@ class MainActivity : AppCompatActivity() {
         enableEdgeToEdge()
         customViewModel = CustomViewModel(application)
         auth = FirebaseAuth.getInstance()
+
+        val currentUser = auth.currentUser
+        val userId = currentUser?.uid ?: "default_user_id"
+
         importImageLauncher = registerForActivityResult(
             ActivityResultContracts.StartActivityForResult()
         ) { result ->
@@ -57,7 +61,10 @@ class MainActivity : AppCompatActivity() {
                     importImageLauncher.launch(intent)
                 },
                 customViewModel = customViewModel,
-                auth = auth
+                auth = auth,
+                userId = userId
+
+
             )
         }
     }
@@ -68,7 +75,8 @@ class MainActivity : AppCompatActivity() {
 fun ComposeNavigation(
     onImportImageClick: () -> Unit,
     customViewModel: CustomViewModel,
-    auth: FirebaseAuth // Receive Firebase Auth
+    auth: FirebaseAuth, // Receive Firebase Auth
+    userId: String
 ) {
     val navController = rememberNavController()
     val importedBitmap = customViewModel.importedBitmap.collectAsState().value
@@ -77,12 +85,12 @@ fun ComposeNavigation(
         composable("login_signup_screen") {
             LoginSignupScreen(navController = navController, auth = auth) // Navigate to Login/Signup screen
         }
-        composable("start_screen") { StartScreen(navController, onImportImageClick = onImportImageClick) }
+        composable("start_screen") { StartScreen(navController, onImportImageClick = onImportImageClick, userId = userId) }
         composable("canvas_screen") {
             CanvasScreen(
                 navController = navController,
                 drawingId = null,
-                importedBitmap = importedBitmap,
+//                importedBitmap = importedBitmap,
                 onImportImageClick = onImportImageClick,
                 viewModel = customViewModel
             )
@@ -92,7 +100,7 @@ fun ComposeNavigation(
             CanvasScreen(
                 navController = navController,
                 drawingId = drawingId,
-                importedBitmap = importedBitmap,
+//                importedBitmap = importedBitmap,
                 onImportImageClick = onImportImageClick,
                 viewModel = customViewModel
             )
@@ -110,6 +118,7 @@ fun DefaultPreview() {
     ComposeNavigation(
         onImportImageClick = {},
         customViewModel = fakeCustomViewModel,
-        auth = FirebaseAuth.getInstance() // Mock Firebase Auth for preview
+        auth = FirebaseAuth.getInstance(), // Mock Firebase Auth for preview
+        userId = "default_user_id"
     )
 }

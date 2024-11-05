@@ -65,15 +65,17 @@ import com.google.firebase.auth.FirebaseAuth
 val firebaseUser = FirebaseAuth.getInstance().currentUser
 val userId = firebaseUser?.uid ?: "default_user_id"
 
+
 @Composable
 fun CanvasScreen(
     navController: NavController,
     drawingId: Int?,
-    importedBitmap: Bitmap?,
     viewModel: CustomViewModel = viewModel(),
     onImportImageClick: () -> Unit
 ) {
-    var localBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    val importedBitmap by viewModel.importedBitmap.collectAsState()
+//    var localBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var localBitmap = importedBitmap
     var localColor by remember { mutableStateOf(Color.Black) }
     var localBrushSize by remember { mutableStateOf(10f) }
     var brushShape by remember { mutableStateOf(BrushShape.ROUND) }
@@ -126,7 +128,6 @@ fun CanvasScreen(
         awaitCancellation()  // This will keep the coroutine alive for shake detection
         Log.d("ShakeDetector", "LaunchedEffect canceled.")
     }
-
     if (drawingId != null) {
         Log.d("CanvasScreen", "Drawing ID: $drawingId")
         val drawingData by viewModel.loadDrawingFromDatabase(drawingId).collectAsState(initial = null)
@@ -146,6 +147,26 @@ fun CanvasScreen(
     } else {
         localBitmap = Bitmap.createBitmap(800, 600, Bitmap.Config.ARGB_8888)
     }
+
+//    if (drawingId != null) {
+//        Log.d("CanvasScreen", "Drawing ID: $drawingId")
+//        val drawingData by viewModel.loadDrawingFromDatabase(drawingId).collectAsState(initial = null)
+//
+//        drawingData?.let {
+//            Log.d("CanvasScreen", "Loading bitmap from file path: ${it.filePath}")
+//            localBitmap = BitmapFactory.decodeFile(it.filePath)
+//            if (localBitmap == null) {
+//                Log.e("CanvasScreen", "Failed to load bitmap from path: ${it.filePath}")
+//            } else {
+//                Log.d("CanvasScreen", "Bitmap successfully loaded")
+//            }
+//        }
+//    } else if (importedBitmap != null) {
+//        localBitmap = importedBitmap
+//        Log.d("CanvasScreen", "Using imported bitmap")
+//    } else {
+//        localBitmap = Bitmap.createBitmap(800, 600, Bitmap.Config.ARGB_8888)
+//    }
 
     BackHandler(true) {
         if (customViewReference?.hasDrawnAnything() == true) {

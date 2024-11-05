@@ -26,8 +26,11 @@ interface ApiService {
     suspend fun deleteDrawing(
         @Path("id") drawingId: Int
     ): Response<ResponseBody>
-
+    
     @GET("/drawings/{id}")
-    suspend fun getDrawingById(@Path("id") drawingId: Int): Response<DrawingData>
+    suspend fun getDrawingFileById(@Path("id") drawingId: Int): Response<ResponseBody>
+
+//    @GET("/drawings/{id}")
+//    suspend fun getDrawingById(@Path("id") drawingId: Int): Response<DrawingData>
 
 }
