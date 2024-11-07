@@ -338,15 +338,15 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
         }
     }
 
-    fun unshareDrawingFromServer(drawingId: Int) {
+    fun unshareDrawingFromServer(drawingId: Int, userId: String) {
         viewModelScope.launch {
             try {
-                val response = RetrofitInstance.api.deleteDrawing(drawingId)
+                val response = RetrofitInstance.api.deleteDrawing(drawingId, userId) // 传递 userId
                 if (response.isSuccessful) {
                     Log.d("UnshareDrawing", "File unshared successfully")
                     updateDrawingSharedStatus(drawingId, false)
                 } else {
-                    Log.e("UnshareDrawing", "Failed to unshare file. Error code: ${response.code()}")
+                    Log.e("UnshareDrawing", "Failed to unshare file. Error code: ${response.code()} - ${response.message()}")
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -354,8 +354,6 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
             }
         }
     }
-
-
 
     fun saveDrawingToGallery(context: Context, bitmap: Bitmap, onComplete: (Boolean) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {

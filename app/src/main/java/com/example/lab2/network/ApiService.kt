@@ -10,6 +10,7 @@ import okhttp3.ResponseBody
 import retrofit2.Response
 import retrofit2.http.DELETE
 import retrofit2.http.GET
+import retrofit2.http.Header
 import retrofit2.http.Path
 
 interface ApiService {
@@ -24,9 +25,10 @@ interface ApiService {
 
     @DELETE("drawings/{id}")
     suspend fun deleteDrawing(
-        @Path("id") drawingId: Int
+        @Path("id") drawingId: Int,
+        @Header("userId") userId: String
     ): Response<ResponseBody>
-    
+
     @GET("/drawings/{id}")
     suspend fun getDrawingFileById(@Path("id") drawingId: Int): Response<ResponseBody>
 

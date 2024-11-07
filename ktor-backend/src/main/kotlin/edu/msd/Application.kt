@@ -194,6 +194,7 @@ fun Application.module() {
                 return@delete
             }
 
+            // 获取数据库中的文件路径
             val drawingData = transaction {
                 DrawingsTable.select { (DrawingsTable.id eq id) and (DrawingsTable.userId eq userId) }
                     .map { it[DrawingsTable.filePath] }
@@ -203,26 +204,32 @@ fun Application.module() {
             if (drawingData != null) {
                 val file = File(drawingData)
 
+                // 删除文件
                 val fileDeleted = if (file.exists()) file.delete() else false
                 if (fileDeleted) {
                     call.application.log.info("File deleted successfully: ${file.absolutePath}")
                 } else {
-                    call.application.log.warn("Failed to delete file or file not found: ${file.absolutePath}")
+                    call.application.log.warn("File not found or failed to delete: ${file.absolutePath}")
                 }
 
+                // 从数据库中删除记录
                 val deletedCount = transaction {
                     DrawingsTable.deleteWhere {
                         (DrawingsTable.id eq id) and (DrawingsTable.userId eq userId)
                     }
                 }
 
+                // 根据删除结果返回响应
                 if (deletedCount > 0) {
                     call.respond(HttpStatusCode.OK, "Drawing and corresponding file deleted successfully")
+                    call.application.log.info("Database record deleted successfully for drawing ID: $id")
                 } else {
                     call.respond(HttpStatusCode.NotFound, "Drawing not found or unauthorized")
+                    call.application.log.warn("Failed to delete database record for drawing ID: $id or unauthorized access")
                 }
             } else {
                 call.respond(HttpStatusCode.NotFound, "Drawing not found or unauthorized")
+                call.application.log.warn("No drawing found for ID: $id or unauthorized access")
             }
         }
 //            delete("/drawings/{id}") {
