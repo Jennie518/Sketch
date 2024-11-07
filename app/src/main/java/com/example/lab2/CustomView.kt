@@ -92,16 +92,11 @@ class CustomView(context: Context, attrs: AttributeSet?) : View(context, attrs) 
         return hasDrawn
     }
 
-    fun setBitmap(bitmap: Bitmap) {
-        if (bitmap != null) {
-            this.bitmap = bitmap
-            Log.d("CustomView", "Bitmap set successfully with size: ${bitmap.width}x${bitmap.height}")
-        } else {
-            Log.e("CustomView", "Bitmap is null when calling setBitmap")
-        }
+    fun setBitmap(newBitmap: Bitmap) {
+        bitmap = newBitmap
+        Log.d("CustomView", "Bitmap set successfully with size: ${bitmap?.width}x${bitmap?.height}")
         invalidate()
     }
-
     fun setColor(color: Int){
         nextColor = color
     }

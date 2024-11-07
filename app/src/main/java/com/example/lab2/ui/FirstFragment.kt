@@ -26,11 +26,11 @@ import java.io.File
 @Composable
 fun StartScreen(
     navController: NavController,
-    viewModel: CustomViewModel = viewModel(),
-    onImportImageClick: () -> Unit
+    viewModel: CustomViewModel,
+    onImportImageClick: () -> Unit,
+    userId: String
 ) {
     val drawings by viewModel.getAllDrawings().observeAsState(listOf())
-
     var showDialog by remember { mutableStateOf(false) }
     var drawingIdInput by remember { mutableStateOf("") }
     val context = LocalContext.current
@@ -68,13 +68,17 @@ fun StartScreen(
                         showDialog = false
                         val drawingId = drawingIdInput.toIntOrNull()
                         if (drawingId != null) {
-                            // send the ID to the server
-                            viewModel.fetchDrawingFromServer(drawingId, onSuccess = { drawing ->
-                                navController.navigate("canvas_screen/${drawing.id}")
+                            viewModel.fetchDrawingFileFromServer(drawingId, onSuccess = { bitmap ->
+                                if (bitmap != null) {
+                                    Log.d("FetchFile", "Fetched Bitmap successfully: width = ${bitmap.width}, height = ${bitmap.height}")
+                                    viewModel.saveImportedBitmap(bitmap)
+                                    navController.navigate("canvas_screen")
+                                } else {
+                                    Log.e("FetchFile", "Fetched Bitmap is null")
+                                }
                             }, onFailure = {
                                 Toast.makeText(context, "Drawing not found", Toast.LENGTH_SHORT).show()
                             })
-
                         } else {
                             Log.e("StartScreen", "Invalid ID")
                         }
@@ -90,7 +94,6 @@ fun StartScreen(
             )
         }
 
-
         LazyColumn {
             items(drawings) { drawing ->
                 var isLoading by remember { mutableStateOf(true) }
@@ -101,13 +104,11 @@ fun StartScreen(
                     val file = File(drawing.filePath)
                     if (file.exists()) {
                         thumbnailBitmap = BitmapFactory.decodeFile(file.path)
-
                     } else {
                         Log.e("StartScreen", "File does not exist: ${file.path}")
                     }
                     isLoading = false
                 }
-
 
                 Row(
                     modifier = Modifier
@@ -133,30 +134,37 @@ fun StartScreen(
                         Text(text = "Drawing ID: ${drawing.id}")
                         Text(text = "Server Drawing ID: ${drawing.serverDrawingId ?: "Not shared"}")
                         Text(text = "Date: ${drawing.date}")
-                        val buttonText = if (drawing.isShared) "Unshare" else "Share"
                         Button(
                             onClick = {
-                                if (drawing.isShared) {
-                                    viewModel.unshareDrawingFromServer(drawing.serverDrawingId ?: return@Button)
-                                    viewModel.updateDrawingSharedStatus(drawing.id, false)
-                                    viewModel.updateDrawingServerId(drawing.id, null)
-                                } else {
-                                    viewModel.uploadDrawingToServer(
-                                        File(drawing.filePath),
-                                        drawing.color,
-                                        drawing.brushSize,
-                                        "default_user_id",
-                                        drawing.id
-                                    ) { serverDrawingId ->
-                                        viewModel.updateDrawingSharedStatus(drawing.id, true)
-                                        viewModel.updateDrawingServerId(drawing.id, serverDrawingId)
-                                    }
+                                viewModel.uploadDrawingToServer(
+                                    File(drawing.filePath),
+                                    drawing.color,
+                                    drawing.brushSize,
+                                    userId,
+                                    drawing.id
+                                ) { serverDrawingId ->
+                                    Toast.makeText(context, "Shared successfully", Toast.LENGTH_SHORT).show()
+                                    viewModel.updateDrawingSharedStatus(drawing.id, true)
+                                    viewModel.updateDrawingServerId(drawing.id, serverDrawingId)
                                 }
                             }
                         ) {
-                            Text(text = buttonText)
+                            Text(text = "Share")
                         }
 
+                        // Display Unshare button only if the drawing is shared
+                        if (drawing.isShared) {
+                            Button(
+                                onClick = {
+                                    viewModel.unshareDrawingFromServer(drawing.serverDrawingId ?: return@Button, userId = userId)
+                                    viewModel.updateDrawingSharedStatus(drawing.id, false)
+                                    viewModel.updateDrawingServerId(drawing.id, null)
+                                    Toast.makeText(context, "Unshared successfully", Toast.LENGTH_SHORT).show()
+                                }
+                            ) {
+                                Text(text = "Unshare")
+                            }
+                        }
                     }
                 }
             }

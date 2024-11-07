@@ -170,6 +170,8 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
 
 
     fun saveImportedBitmap(bitmap: Bitmap) {
+        Log.d("CustomViewModel", "Saving imported bitmap in ViewModel instance: ${this.hashCode()}")
+        Log.d("CustomViewModel", "Saving imported bitmap: width = ${bitmap.width}, height = ${bitmap.height}")
         _importedBitmap.value = bitmap
     }
     fun importImage(context: Context, uri: android.net.Uri, onSuccess: (Bitmap) -> Unit, onFailure: () -> Unit) {
@@ -267,19 +269,29 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
             }
         }
     }
-    fun fetchDrawingFromServer(drawingId: Int, onSuccess: (DrawingData) -> Unit, onFailure: () -> Unit) {
+    fun fetchDrawingFileFromServer(
+        drawingId: Int,
+        onSuccess: (Bitmap) -> Unit,
+        onFailure: () -> Unit
+    ) {
         viewModelScope.launch {
             try {
-                val response = RetrofitInstance.api.getDrawingById(drawingId)
+                val response = RetrofitInstance.api.getDrawingFileById(drawingId)
                 if (response.isSuccessful && response.body() != null) {
-                    onSuccess(response.body()!!)
+                    val inputStream = response.body()!!.byteStream()
+                    val bitmap = BitmapFactory.decodeStream(inputStream)
+                    inputStream.close()
+
+                    if (bitmap != null) {
+                        onSuccess(bitmap)
+                    } else {
+                        onFailure()
+                    }
                 } else {
-                    Log.e("FetchDrawing", "Failed to fetch drawing. Error code: ${response.code()}")
                     onFailure()
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
-                Log.e("FetchDrawing", "Exception occurred while fetching drawing: ${e.localizedMessage}")
                 onFailure()
             }
         }
@@ -300,15 +312,15 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
         }
     }
 
-    fun unshareDrawingFromServer(drawingId: Int) {
+    fun unshareDrawingFromServer(drawingId: Int, userId: String) {
         viewModelScope.launch {
             try {
-                val response = RetrofitInstance.api.deleteDrawing(drawingId)
+                val response = RetrofitInstance.api.deleteDrawing(drawingId, userId)
                 if (response.isSuccessful) {
                     Log.d("UnshareDrawing", "File unshared successfully")
                     updateDrawingSharedStatus(drawingId, false)
                 } else {
-                    Log.e("UnshareDrawing", "Failed to unshare file. Error code: ${response.code()}")
+                    Log.e("UnshareDrawing", "Failed to unshare file. Error code: ${response.code()} - ${response.message()}")
                 }
             } catch (e: Exception) {
                 e.printStackTrace()

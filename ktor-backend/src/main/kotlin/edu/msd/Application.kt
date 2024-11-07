@@ -21,8 +21,8 @@ import java.io.File
 object DBSettings {
     fun init() {
         // Initialize the H2 database
-//        Database.connect("jdbc:h2:mem:test;MODE=MYSQL;DB_CLOSE_DELAY=-1", driver = "org.h2.Driver")
-        Database.connect("jdbc:h2:file:./data/db;MODE=MYSQL", driver = "org.h2.Driver")
+        Database.connect("jdbc:h2:mem:test;MODE=MYSQL;DB_CLOSE_DELAY=-1", driver = "org.h2.Driver")
+//        Database.connect("jdbc:h2:file:./data/db;MODE=MYSQL", driver = "org.h2.Driver")
 
 
         // Execute table creation in a transaction block
@@ -131,53 +131,71 @@ fun Application.module() {
                 return@get
             }
 
-            val drawing = transaction {
+            val drawingPath = transaction {
                 DrawingsTable.select { DrawingsTable.id eq drawingId }
-                    .map {
-                        Drawing(
-                            id = it[DrawingsTable.id].value,
-                            filePath = it[DrawingsTable.filePath],
-                            color = it[DrawingsTable.color],
-                            brushSize = it[DrawingsTable.brushSize],
-                            date = it[DrawingsTable.date],
-                            userId = it[DrawingsTable.userId]
-                        )
-                    }.singleOrNull()
+                    .map { it[DrawingsTable.filePath] }
+                    .singleOrNull()
             }
 
-            if (drawing != null) {
-                call.respond(HttpStatusCode.OK, drawing)
+            if (drawingPath != null) {
+                val file = File(drawingPath)
+                if (file.exists()) {
+                    call.respondFile(file)  // Respond with the actual image file
+                } else {
+                    call.respond(HttpStatusCode.NotFound, "File not found")
+                }
             } else {
                 call.respond(HttpStatusCode.NotFound, "Drawing not found")
             }
         }
 //        unShared logic
-            delete("/drawings/{id}") {
-                val userId = call.request.headers["userId"]
-                val id = call.parameters["id"]?.toIntOrNull()
+        delete("/drawings/{id}") {
+            val userId = call.request.headers["userId"]
+            val drawingId = call.parameters["id"]?.toIntOrNull()
 
-                if (userId == null) {
-                    call.respond(HttpStatusCode.Unauthorized, "User not authenticated")
-                    return@delete
-                }
+            if (userId == null) {
+                call.respond(HttpStatusCode.Unauthorized, "User not authenticated")
+                return@delete
+            }
 
-                if (id == null) {
-                    call.respond(HttpStatusCode.BadRequest, "Invalid or missing ID")
-                    return@delete
+            if (drawingId == null) {
+                call.respond(HttpStatusCode.BadRequest, "Invalid or missing drawing ID")
+                return@delete
+            }
+
+            call.application.log.info("Attempting to delete drawing with ID: $drawingId for user ID: $userId")
+
+            val drawingRecord = transaction {
+                DrawingsTable.select { (DrawingsTable.id eq drawingId) and (DrawingsTable.userId eq userId) }
+                    .map { it[DrawingsTable.filePath] }
+                    .singleOrNull()
+            }
+
+            if (drawingRecord != null) {
+                val file = File(drawingRecord)
+                val fileDeleted = file.exists() && file.delete()
+
+                if (fileDeleted) {
+                    call.application.log.info("File deleted successfully: ${file.absolutePath}")
+                } else {
+                    call.application.log.warn("File not found or failed to delete: ${file.absolutePath}")
                 }
 
                 val deletedCount = transaction {
                     DrawingsTable.deleteWhere {
-                        (DrawingsTable.id eq id) and (DrawingsTable.userId eq userId) // 只能删除当前用户的绘图
+                        (DrawingsTable.id eq drawingId) and (DrawingsTable.userId eq userId)
                     }
                 }
 
                 if (deletedCount > 0) {
-                    call.respond(HttpStatusCode.OK, "Drawing deleted successfully")
+                    call.respond(HttpStatusCode.OK, "Drawing and file deleted successfully")
                 } else {
                     call.respond(HttpStatusCode.NotFound, "Drawing not found or unauthorized")
                 }
+            } else {
+                call.respond(HttpStatusCode.NotFound, "Drawing not found or unauthorized")
             }
+        }
     }
     log.info("Ktor application started successfully with routes.")
 }

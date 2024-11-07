@@ -69,10 +69,12 @@ val userId = firebaseUser?.uid ?: "default_user_id"
 fun CanvasScreen(
     navController: NavController,
     drawingId: Int?,
-    importedBitmap: Bitmap?,
-    viewModel: CustomViewModel = viewModel(),
-    onImportImageClick: () -> Unit
+//    importedBitmap: Bitmap?,
+    viewModel: CustomViewModel,
+    onImportImageClick: () -> Unit,
+    userId: String
 ) {
+    val importedBitmap by viewModel.importedBitmap.collectAsState()
     var localBitmap by remember { mutableStateOf<Bitmap?>(null) }
     var localColor by remember { mutableStateOf(Color.Black) }
     var localBrushSize by remember { mutableStateOf(10f) }
@@ -80,6 +82,15 @@ fun CanvasScreen(
     var customViewReference: CustomView? by remember { mutableStateOf(null) }
 
     val context = LocalContext.current
+    Log.d("CanvasScreen", "ViewModel instance hash: ${viewModel.hashCode()}")
+    Log.d("CanvasScreen", "Initial importedBitmap state: $importedBitmap")
+
+    LaunchedEffect(importedBitmap) {
+        importedBitmap?.let {
+            Log.d("CanvasScreen", "Using imported bitmap: width = ${it.width}, height = ${it.height}")
+            localBitmap = it
+        }
+    }
 
     // sensor
     val sensorManager = remember { context.getSystemService(Context.SENSOR_SERVICE) as SensorManager }
@@ -127,10 +138,14 @@ fun CanvasScreen(
         Log.d("ShakeDetector", "LaunchedEffect canceled.")
     }
 
-    if (drawingId != null) {
+// 判断是否已从 ViewModel 中获取到导入的图片
+    if (importedBitmap != null) {
+        localBitmap = importedBitmap
+        Log.d("CanvasScreen", "Using imported bitmap")
+    } else if (drawingId != null) {
+        // 如果 drawingId 存在，则从数据库加载图片
         Log.d("CanvasScreen", "Drawing ID: $drawingId")
         val drawingData by viewModel.loadDrawingFromDatabase(drawingId).collectAsState(initial = null)
-
         drawingData?.let {
             Log.d("CanvasScreen", "Loading bitmap from file path: ${it.filePath}")
             localBitmap = BitmapFactory.decodeFile(it.filePath)
@@ -140,12 +155,29 @@ fun CanvasScreen(
                 Log.d("CanvasScreen", "Bitmap successfully loaded")
             }
         }
-    } else if (importedBitmap != null) {
-        localBitmap = importedBitmap
-        Log.d("CanvasScreen", "Using imported bitmap")
-    } else {
+    } else if (localBitmap == null) {
+        // 如果以上条件都不满足，初始化默认图片
         localBitmap = Bitmap.createBitmap(800, 600, Bitmap.Config.ARGB_8888)
     }
+//    if (drawingId != null) {
+//        Log.d("CanvasScreen", "Drawing ID: $drawingId")
+//        val drawingData by viewModel.loadDrawingFromDatabase(drawingId).collectAsState(initial = null)
+//
+//        drawingData?.let {
+//            Log.d("CanvasScreen", "Loading bitmap from file path: ${it.filePath}")
+//            localBitmap = BitmapFactory.decodeFile(it.filePath)
+//            if (localBitmap == null) {
+//                Log.e("CanvasScreen", "Failed to load bitmap from path: ${it.filePath}")
+//            } else {
+//                Log.d("CanvasScreen", "Bitmap successfully loaded")
+//            }
+//        }
+//    } else if (importedBitmap != null) {
+//        localBitmap = importedBitmap
+//        Log.d("CanvasScreen", "Using imported bitmap")
+//    } else {
+//        localBitmap = Bitmap.createBitmap(800, 600, Bitmap.Config.ARGB_8888)
+//    }
 
     BackHandler(true) {
         if (customViewReference?.hasDrawnAnything() == true) {
