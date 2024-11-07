@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.devtools.ksp")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -54,6 +55,7 @@ dependencies {
     implementation("androidx.compose.runtime:runtime-livedata:1.7.3")
     implementation("androidx.compose.ui:ui-test-junit4-android:1.7.3")
     implementation("androidx.compose.ui:ui-test-android:1.7.4")
+    implementation("com.google.firebase:firebase-auth-ktx:23.1.0")
     val fragment_version = "1.8.4"
     val room_version = "2.6.1"
     // Java language implementation
@@ -64,6 +66,10 @@ dependencies {
     implementation ("androidx.room:room-runtime:$room_version")
     implementation("androidx.room:room-ktx:$room_version")
     ksp("androidx.room:room-compiler:$room_version")
+
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation("com.squareup.okhttp3:okhttp:4.9.0")
 
 
     implementation("androidx.core:core-ktx:1.13.1")
@@ -88,4 +94,9 @@ dependencies {
     val nav_version = "2.8.2"
     //noinspection GradleDependency
     implementation("androidx.navigation:navigation-compose:$nav_version")
+
+    implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
+    implementation("com.google.firebase:firebase-analytics")
+
+
 }

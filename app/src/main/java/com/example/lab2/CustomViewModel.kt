@@ -27,6 +27,7 @@ import com.example.lab2.data.DrawingDao
 import com.example.lab2.data.DrawingData
 import com.example.lab2.data.DrawingDatabase
 import com.example.lab2.data.DrawingRepository
+import com.example.lab2.network.RetrofitInstance
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -38,6 +39,13 @@ import java.io.FileOutputStream
 import java.io.IOException
 import java.io.OutputStream
 
+
+import okhttp3.MediaType
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.MultipartBody
+import okhttp3.RequestBody
+import okhttp3.RequestBody.Companion.asRequestBody
+import okhttp3.RequestBody.Companion.toRequestBody
 
 
 class CustomViewModel(application: Application) : AndroidViewModel(application){
@@ -129,10 +137,6 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
     }
 
 
-
-
-
-
     fun loadDrawingFromDatabase(drawingId: Int): StateFlow<DrawingData?> {
         val drawingDataFlow = MutableStateFlow<DrawingData?>(null)
         viewModelScope.launch(Dispatchers.IO) {
@@ -159,9 +163,15 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
             context.startActivity(Intent.createChooser(shareIntent, "Share drawing via"))
         }
     }
+    fun getDrawingById(drawingId: Int): LiveData<DrawingData?> {
+        return drawingDao.getDrawingById(drawingId)
+    }
+
 
 
     fun saveImportedBitmap(bitmap: Bitmap) {
+        Log.d("CustomViewModel", "Saving imported bitmap in ViewModel instance: ${this.hashCode()}")
+        Log.d("CustomViewModel", "Saving imported bitmap: width = ${bitmap.width}, height = ${bitmap.height}")
         _importedBitmap.value = bitmap
     }
     fun importImage(context: Context, uri: android.net.Uri, onSuccess: (Bitmap) -> Unit, onFailure: () -> Unit) {
@@ -195,6 +205,132 @@ class CustomViewModel(application: Application) : AndroidViewModel(application){
     fun getAllDrawings(): LiveData<List<DrawingData>> {
         return drawingDao.getAllDrawings()
     }
+
+    fun uploadDrawingToServer(
+        file: File,
+        color: Int,
+        brushSize: Float,
+        userId: String,
+        localDrawingId: Int,
+        onSuccess: (Int) -> Unit
+    ) {
+        val fileReqBody = file.asRequestBody("image/png".toMediaTypeOrNull())
+        val filePart = MultipartBody.Part.createFormData("file", file.name, fileReqBody)
+
+        val colorReqBody = color.toString().toRequestBody("text/plain".toMediaTypeOrNull())
+        val brushSizeReqBody = brushSize.toString().toRequestBody("text/plain".toMediaTypeOrNull())
+        val userIdReqBody = userId.toRequestBody("text/plain".toMediaTypeOrNull())
+
+        viewModelScope.launch {
+            Log.d("UploadDrawing", "Uploading file started")
+            try {
+                val response = RetrofitInstance.api.uploadDrawing(filePart, colorReqBody, brushSizeReqBody, userIdReqBody)
+
+                if (response.isSuccessful) {
+                    Log.d("UploadDrawing", "File uploaded successfully")
+
+                    val serverDrawingId = response.body()?.drawingId ?: -1
+
+                    if (serverDrawingId != -1) {
+                        updateDrawingServerId(localDrawingId, serverDrawingId)
+                        updateDrawingSharedStatus(localDrawingId, true)
+
+                        getDrawingById(localDrawingId).observeForever { drawing ->
+                            if (drawing != null) {
+                                Log.d("UploadDrawing", "Drawing updated in UI: ${drawing.serverDrawingId}")
+                            }
+                        }
+
+                        onSuccess(serverDrawingId)
+                    } else {
+                        Log.e("UploadDrawing", "Failed to retrieve server drawing ID")
+                    }
+                } else {
+                    Log.e("UploadDrawing", "Failed to upload file. Error code: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Log.e("UploadDrawing", "Exception occurred during upload: ${e.localizedMessage}")
+            }
+        }
+    }
+
+
+    fun updateDrawingSharedStatus(drawingId: Int, isShared: Boolean) {
+        viewModelScope.launch(Dispatchers.IO) {
+            drawingDao.updateDrawingSharedStatus(drawingId, isShared)
+            withContext(Dispatchers.Main) {
+                Log.d("UpdateDrawing", "Drawing ID $drawingId shared status updated to $isShared")
+                getDrawingById(drawingId).observeForever {
+                    if (it != null) {
+                        Log.d("UpdateDrawing", "Drawing shared status updated in UI: ${it.isShared}")
+                    }
+                }
+            }
+        }
+    }
+    fun fetchDrawingFileFromServer(
+        drawingId: Int,
+        onSuccess: (Bitmap) -> Unit,
+        onFailure: () -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val response = RetrofitInstance.api.getDrawingFileById(drawingId)
+                if (response.isSuccessful && response.body() != null) {
+                    val inputStream = response.body()!!.byteStream()
+                    val bitmap = BitmapFactory.decodeStream(inputStream)
+                    inputStream.close()
+
+                    if (bitmap != null) {
+                        onSuccess(bitmap)
+                    } else {
+                        onFailure()
+                    }
+                } else {
+                    onFailure()
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                onFailure()
+            }
+        }
+    }
+
+
+
+    fun updateDrawingServerId(localDrawingId: Int, serverDrawingId: Int?) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val drawing = drawingDao.getDrawingByIdSync(localDrawingId)
+            if (drawing != null) {
+                val updatedDrawing = drawing.copy(serverDrawingId = serverDrawingId)
+                drawingDao.updateDrawing(updatedDrawing)
+                Log.d("UpdateDrawing", "Drawing ID $localDrawingId server ID updated to $serverDrawingId")
+            } else {
+                Log.e("UpdateDrawingServerId", "Drawing with ID $localDrawingId not found.")
+            }
+        }
+    }
+
+    fun unshareDrawingFromServer(drawingId: Int, userId: String) {
+        viewModelScope.launch {
+            try {
+                val response = RetrofitInstance.api.deleteDrawing(drawingId, userId)
+                if (response.isSuccessful) {
+                    Log.d("UnshareDrawing", "File unshared successfully")
+                    updateDrawingSharedStatus(drawingId, false)
+                } else {
+                    Log.e("UnshareDrawing", "Failed to unshare file. Error code: ${response.code()} - ${response.message()}")
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                Log.e("UnshareDrawing", "Exception occurred during unshare: ${e.localizedMessage}")
+            }
+        }
+    }
+
+
+
     fun saveDrawingToGallery(context: Context, bitmap: Bitmap, onComplete: (Boolean) -> Unit) {
         viewModelScope.launch(Dispatchers.IO) {
             val filename = "drawing_${System.currentTimeMillis()}.png"

@@ -9,6 +9,8 @@ data class DrawingData(
     val filePath: String,
     val color: Int,
     val brushSize: Float,
-    val date: Long
+    val date: Long,
+    val isShared: Boolean = false,
+    val serverDrawingId: Int? = null
 )
 

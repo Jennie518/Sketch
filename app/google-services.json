@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "183239170069",
+    "project_id": "sketch-proj",
+    "storage_bucket": "sketch-proj.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:183239170069:android:a73284a84d0eb21918d61c",
+        "android_client_info": {
+          "package_name": "com.example.lab2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCGaJPYMMvikOP92dch1rh0MvpqbcXK-AI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
